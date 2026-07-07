@@ -11,10 +11,10 @@
 
     <modules>
         <module>weather-db</module>
+        <module>weather-generator</module>
         <!-- uncomment as each module is created
         <module>weather-materialiser</module>
         <module>weather-api</module>
-        <module>weather-generator</module>
         -->
     </modules>
 

@@ -1,7 +1,7 @@
 # Implementation plan
 
 Living document -- tick off steps as they land, amend freely. Unlike the design
-docs, this file is edited in place (no iteration headers).
+docs, this file is edited in place (no iteration headers). Generated after requirements iteration 6.
 
 The plan is organised as **vertical slices**: each feature is taken all the way
 from generation through RabbitMQ, DB, and API to the frontend before the next
@@ -32,7 +32,7 @@ new logic plus a hands-on psql/curl session -- so the dev loop stays small.
 The thinnest possible vertical: temperature only, no wind, no warnings.
 
 - [x] Migration: `scalar_measurements` + `station_cities` materialized view
-- [ ] `weather-generator` part 1: seed regions, cities, stations directly into
+- [x] `weather-generator` part 1: seed regions, cities, stations directly into
       the DB (bulk-insert jOOQ practice); refresh the matview once after seeding
 - [ ] `weather-generator` part 2: publish fake `station_measurements` XML
       (temperature only for now) to RabbitMQ on a per-station schedule
