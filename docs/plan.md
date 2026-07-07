@@ -34,8 +34,16 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 - [x] Migration: `scalar_measurements` + `station_cities` materialized view
 - [x] `weather-generator` part 1: seed regions, cities, stations directly into
       the DB (bulk-insert jOOQ practice); refresh the matview once after seeding
-- [ ] `weather-generator` part 2: publish fake `station_measurements` XML
-      (temperature only for now) to RabbitMQ on a per-station schedule
+- [ ] `weather-generator` part 2: seed some recent temperature measurements
+      directly into the DB, so the current-weather endpoint has data before
+      any live messages have flowed
+- [ ] RabbitMQ topology: `stations` exchange, `stations.temperature` queue +
+      binding declared via `definitions.json` (durable, so it exists before
+      either app connects regardless of start order)
+- [ ] `weather-generator` part 3: publish fake `station_measurements` XML
+      (temperature only for now) to RabbitMQ on a per-station schedule,
+      continuing to simulate live data as we go (persistent messages,
+      `delivery_mode: 2`)
 - [ ] `weather-materialiser`: consume, parse XML leniently, normalise °F to °C,
       skip unknown stations, insert
 - [ ] `weather-api`: `GET /api/weather` with pagination -- temperature average

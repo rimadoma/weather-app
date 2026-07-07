@@ -1,3 +1,26 @@
+# Iteration 7 -- RabbitMQ topology
+- Topology (exchanges, queues, bindings) is declared via RabbitMQ's
+  `definitions.json`, loaded at broker boot -- not auto-declared by either
+  app on connect. This decouples topology existence from app startup order:
+  the generator is meant to launch before the materialiser, so the queue
+  must already exist and be bound by the time the first message is
+  published, or a topic/direct exchange just silently drops it. Default
+  vhost `/` and `weather`/`weather` credentials stay as already set via
+  compose.yaml env vars; `definitions.json` only adds exchanges/queues/bindings.
+- One exchange per message domain, not per unit-of-measurement. `stations`
+  covers everything a station itself tells us: starts with routing key
+  `stations.temperature` -> `stations.temperature.queue` (Slice 1), expanding
+  to `stations.wind` (Slice 2) and `stations.registration` (Slice 3).
+  `weather_warning` messages are region-scoped, not station-scoped, so they
+  get their own exchange (name TBD) when Slice 5 lands rather than being
+  folded into `stations`.
+- Queues are `durable: true` and messages are published with
+  `delivery_mode: 2` (persistent) -- correctness practice for surviving a
+  materialiser restart while the broker keeps running. No RabbitMQ PVC in
+  this project, so none of this survives a full broker container restart --
+  consistent with the original brief's "doesn't have to ... survive app
+  crashing."
+
 # Iteration 6 -- application topology and module layout
 Maven multi-module project:
 - **weather-db** -- Flyway migrations, jOOQ codegen, and a thin query toolbox. The toolbox exposes helpers only for what is genuinely PostgreSQL-gnarly or shared (earth_distance raw-SQL template, vector-mean expression, 6h-bucket floor expression, matview refresh). Apps write their own jOOQ queries against the generated classes -- deliberately NOT a full DAO facade: jOOQ's typed DSL is already the abstraction, and the instructive queries should live in the apps where they belong.
