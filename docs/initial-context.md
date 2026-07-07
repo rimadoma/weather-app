@@ -1,0 +1,5 @@
+This is a learning project where I want to learn jooq, vue.js, and vuex as new skills, and refresh my memory on Spring Boot & PostGreqSQL.. Backend is more important to learn than frontend. AI can generate code, but only a small bit at a time so that I have time to understand it and ask questions. I want to work in an iterative fashion starting from the get-go. That is, from evaluating my initial requirements and data modelling iteratively until we're ready to implement. 
+
+AI should not implement everything for me, but provide boilerplate on request. It should review my code and design, and provide alternatives, but keep in mind that this an exercise project, not meant to be production ready.
+
+AI should prefer clarifying questions over generated assumptions. It should stop whenever unclear. It should proceed with minimal, human digestible steps, unless otherwise specified.
