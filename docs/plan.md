@@ -11,20 +11,21 @@ new logic plus a hands-on psql/curl session -- so the dev loop stays small.
 ## Phase 0 -- project skeleton & dev loop
 
 - [x] Parent `pom.xml` + `weather-db` module skeleton
-- [ ] `docker compose up`; verify psql connection and RabbitMQ management UI
+- [x] `docker compose up`; verify psql connection and RabbitMQ management UI
 - [x] Flyway wired to run via Maven from weather-db; migration V1: extensions
       (cube, earthdistance)
-- [ ] Migration V2 (developer-written DDL practice): `regions`, `cities`,
-      `stations` incl. the location CHECK constraints and the GiST index
-- [ ] jOOQ codegen wired to run after migrations; inspect the generated classes
+- [x] Migration V2: `regions` (generated example)
+- [x] Migration V3 (developer-written DDL practice): `cities` + `stations`
+      incl. the location CHECK constraints and the GiST index
+- [x] jOOQ codegen wired to run after migrations; inspect the generated classes
 - [x] Test approach decided: plain unit tests (no DB) for pure logic -- XML
       parsing, unit normalisation, wind pairing, bucket maths; Testcontainers
       (singleton container, `@ServiceConnection`) for anything executing jOOQ
       against the schema. H2/mocked-SQL rejected: extensions, matviews, and
       enums need real Postgres. The compose DB stays an interactive
       playground, not a test target.
-- **Checkpoint:** migrate, regenerate, and query one table through jOOQ from a
-  scratch test; poke the schema in psql
+- [x] **Checkpoint:** migrate, regenerate, and query one table through jOOQ
+      from a scratch test; poke the schema in psql -- Phase 0 complete
 
 ## Slice 1 -- current temperature, end to end
 

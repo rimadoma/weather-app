@@ -10,8 +10,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <!-- uncomment as each module is created
         <module>weather-db</module>
+        <!-- uncomment as each module is created
         <module>weather-materialiser</module>
         <module>weather-api</module>
         <module>weather-generator</module>
@@ -21,7 +21,13 @@
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>4.0.0</spring-boot.version>
+        <spring-boot.version>4.1.0</spring-boot.version>
+        <!-- Maven plugins can't see versions from the imported BOM, so these
+             mirror spring-boot-dependencies ${spring-boot.version}. Keep them
+             in sync when bumping Spring Boot. -->
+        <jooq.version>3.21.5</jooq.version>
+        <flyway.version>12.4.0</flyway.version>
+        <postgresql.version>42.7.11</postgresql.version>
     </properties>
 
     <dependencyManagement>

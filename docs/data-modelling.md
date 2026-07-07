@@ -1,3 +1,21 @@
+# Iteration 5 -- V3 constraint hardening (decided during implementation)
+Small constraint decisions made while writing migration V3, backported here
+rather than designed up front:
+- `cities.name` gains UNIQUE -- the station_cities matview matches stations to
+  cities by name; duplicate city names would make those matches murky.
+- `cities` and `stations` gain range CHECKs: -90 <= lat <= 90,
+  -180 <= lng <= 180. The DECIMAL(8,6)/(9,6) types alone happily store
+  impossible coordinates like lat 99.999999.
+
+# Iteration 4 -- region names are unique
+Region names are (fictional) UK counties. `weather_warning` messages carry only
+a region name, so warning ingest resolves regions by name -- duplicates would
+make that lookup ambiguous.
+
+### regions (revised)
+* id, BIGSERIAL, PRIMARY KEY
+* name, VARCHAR(50), NOT NULL, UNIQUE
+
 # Iteration 3 -- station registration; station_cities materialized view
 Changes from iteration 2: stations are keyed by the serial number from their registration message (name dropped -- the registration message carries none); location can be city name, coordinates, or both; city matching is precomputed into a materialized view refreshed at registration time.
 
