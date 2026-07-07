@@ -31,7 +31,7 @@ new logic plus a hands-on psql/curl session -- so the dev loop stays small.
 
 The thinnest possible vertical: temperature only, no wind, no warnings.
 
-- [ ] Migration: `scalar_measurements` + `station_cities` materialized view
+- [x] Migration: `scalar_measurements` + `station_cities` materialized view
 - [ ] `weather-generator` part 1: seed regions, cities, stations directly into
       the DB (bulk-insert jOOQ practice); refresh the matview once after seeding
 - [ ] `weather-generator` part 2: publish fake `station_measurements` XML

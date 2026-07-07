@@ -1,4 +1,21 @@
-# Iteration 5 -- V3 constraint hardening (decided during implementation)
+# Iteration 6 -- scalar_measurements.type is VARCHAR + CHECK, not ENUM
+Postgres ENUM values can only be extended with `ALTER TYPE ... ADD VALUE`, which
+can't be used in the same transaction as anything that reads the new value --
+awkward given Flyway wraps each migration in a transaction by default. A
+VARCHAR + CHECK still needs a migration per new type, but that migration is a
+plain `ALTER TABLE ... DROP/ADD CONSTRAINT`, fully transactional, no special
+restriction.
+
+### scalar_measurements (revised)
+* id, BIGSERIAL, PRIMARY KEY
+* type, VARCHAR(20), NOT NULL, CHECK (type IN ('temperature')) -- future scalar types extend this CHECK
+* reading, DECIMAL(5, 1), NOT NULL -- always normalised before insert (°C for temperature)
+* station_id, BIGINT, NOT NULL, FOREIGN KEY(stations.id)
+* measured_at, TIMESTAMPTZ, NOT NULL -- time of measurement, set by source, no default
+
+Indices: station_id, measured_at
+
+# Iteration 5 -- V3 constraint hardening
 Small constraint decisions made while writing migration V3, backported here
 rather than designed up front:
 - `cities.name` gains UNIQUE -- the station_cities matview matches stations to
@@ -7,7 +24,7 @@ rather than designed up front:
   -180 <= lng <= 180. The DECIMAL(8,6)/(9,6) types alone happily store
   impossible coordinates like lat 99.999999.
 
-# Iteration 4 -- region names are unique
+# Iteration 4 -- region names are unique  (last pre implementation)
 Region names are (fictional) UK counties. `weather_warning` messages carry only
 a region name, so warning ingest resolves regions by name -- duplicates would
 make that lookup ambiguous.
@@ -16,7 +33,7 @@ make that lookup ambiguous.
 * id, BIGSERIAL, PRIMARY KEY
 * name, VARCHAR(50), NOT NULL, UNIQUE
 
-# Iteration 3 -- station registration; station_cities materialized view
+# Iteration 3 -- station registration; station_cities materialised view
 Changes from iteration 2: stations are keyed by the serial number from their registration message (name dropped -- the registration message carries none); location can be city name, coordinates, or both; city matching is precomputed into a materialized view refreshed at registration time.
 
 ### stations (revised)
