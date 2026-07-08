@@ -1,4 +1,4 @@
-package org.example.weather.generator.publishers;
+package org.example.weather.generator.schemas;
 
 import com.fasterxml.jackson.annotation.JsonRootName;
 import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;

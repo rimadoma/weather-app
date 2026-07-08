@@ -4,4 +4,5 @@ Includes a test data generator that can be used to seed historical data and to p
 # How to dev
 1. Start PostGreSql (`docker compose up`)
 2. Run migrations `mvn -pl weather-db flyway:migrate` (one time prerequisite)
-3. `mvn clean install` (jOOQ code generation needs steps #1 and #3)
+3. Build modules `mvn clean install` (jOOQ code generation needs steps #1 and #2)
+4. Run weather-generator if you need to seed the db and publish test messages

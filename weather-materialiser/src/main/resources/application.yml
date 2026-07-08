@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/weather
+    username: weather
+    password: weather
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: weather
+    password: weather
+
+weather:
+  rabbitmq:
+    temperature-queue: stations.temperature.queue

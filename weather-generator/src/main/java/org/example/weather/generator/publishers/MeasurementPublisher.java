@@ -1,6 +1,7 @@
 package org.example.weather.generator.publishers;
 
-import org.example.weather.generator.publishers.StationMeasurements.Measurement;
+import org.example.weather.generator.schemas.StationMeasurements;
+import org.example.weather.generator.schemas.StationMeasurements.Measurement;
 import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

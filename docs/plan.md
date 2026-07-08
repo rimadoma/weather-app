@@ -44,7 +44,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
       (temperature only for now) to RabbitMQ on a per-station schedule,
       continuing to simulate live data as we go (persistent messages,
       `delivery_mode: 2`)
-- [ ] `weather-materialiser`: consume, parse XML leniently, normalise °F to °C,
+- [x] `weather-materialiser`: consume, parse XML leniently, normalise °F to °C,
       skip unknown stations, insert
 - [ ] `weather-api`: `GET /api/weather` with pagination -- temperature average
       over the past hour, null for cities without data (warnings key present
@@ -101,4 +101,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 
 - Deploy to Docker Desktop Kubernetes with `skaffold dev`
 - `REFRESH ... CONCURRENTLY` upgrade for the matview
-- Refactor RabbitMQ listeners and publishers into a shared lib module
+- Refactor RabbitMQ listeners and publishers into a shared lib module --
+  the message schemas (`StationMeasurements`/`Measurement`) are duplicated
+  between weather-generator and weather-materialiser for now and need to
+  migrate into that shared module too, not just the listener/publisher code
