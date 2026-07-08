@@ -34,7 +34,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 - [x] Migration: `scalar_measurements` + `station_cities` materialized view
 - [x] `weather-generator` part 1: seed regions, cities, stations directly into
       the DB (bulk-insert jOOQ practice); refresh the matview once after seeding
-- [ ] `weather-generator` part 2: seed some recent temperature measurements
+- [x] `weather-generator` part 2: seed some recent temperature measurements
       directly into the DB, so the current-weather endpoint has data before
       any live messages have flowed
 - [ ] RabbitMQ topology: `stations` exchange, `stations.temperature` queue +
@@ -77,7 +77,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 
 ## Slice 4 -- past week detail
 
-- [ ] Generator: seed ~a week of historic measurements directly into the DB
+- [x] Generator: seed ~a week of historic measurements directly into the DB
 - [ ] API: `GET /api/weather/:id` -- fixed 6 h bucket grid (02/08/14/20 UTC),
       25 buckets, nulls for empty buckets, current partial bucket last
 - [ ] Frontend: detail page with a simple line graph (temperature, wind speed,
