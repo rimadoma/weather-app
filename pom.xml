@@ -13,9 +13,7 @@
         <module>weather-db</module>
         <module>weather-generator</module>
         <module>weather-materialiser</module>
-        <!-- uncomment as each module is created
         <module>weather-api</module>
-        -->
     </modules>
 
     <properties>
@@ -28,6 +26,7 @@
         <jooq.version>3.21.5</jooq.version>
         <flyway.version>12.4.0</flyway.version>
         <postgresql.version>42.7.11</postgresql.version>
+        <openapi-generator.version>7.23.0</openapi-generator.version>
     </properties>
 
     <dependencyManagement>

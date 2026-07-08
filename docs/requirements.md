@@ -1,3 +1,8 @@
+# Iteration 9 -- weather-api build tooling note
+- `openapi-generator-maven-plugin` is pinned to 7.23.0, not 7.24.0: despite
+  showing up in the plugin's own upstream docs/pom.xml, 7.24.0 isn't actually
+  published to Maven Central yet. 7.23.0 is the latest resolvable release.
+
 # Iteration 8 -- RabbitMQ definitions.json must be self-contained
 Refines iteration 7's `definitions.json` decision, based on a gotcha hit in
 a prior project:
