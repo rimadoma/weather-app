@@ -19,9 +19,12 @@ services:
 
   rabbitmq:
     image: rabbitmq:4-management
-    environment:
-      RABBITMQ_DEFAULT_USER: weather
-      RABBITMQ_DEFAULT_PASS: weather
+    # User, vhost, and topology all come from definitions.json (loaded via
+    # the conf.d snippet below) -- no RABBITMQ_DEFAULT_USER/PASS here, so
+    # there's exactly one place that bootstraps the broker, not two.
+    volumes:
+      - ./infra/conf.d/20-definitions.conf:/etc/rabbitmq/conf.d/20-definitions.conf:ro
+      - ./infra/definitions.json:/etc/rabbitmq/definitions.json:ro
     ports:
       - "5672:5672"   # AMQP
       - "15672:15672" # management UI

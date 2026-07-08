@@ -1,3 +1,17 @@
+# Iteration 8 -- RabbitMQ definitions.json must be self-contained
+Refines iteration 7's `definitions.json` decision, based on a gotcha hit in
+a prior project:
+- The definition is self-contained: vhost `/`, the `weather`/`weather` user,
+  and its permissions are declared inside `definitions.json` itself, not
+  left to `RABBITMQ_DEFAULT_USER`/`PASS` in compose.yaml. Two competing
+  bootstrap paths (env-var default-user creation and definitions import) can
+  silently conflict -- confirmed by RabbitMQ's own boot log, which detects a
+  definitions file and logs "Will not seed default virtual host and user:
+  have definitions to load...", skipping the env-var path entirely.
+- Decided to use 'direct' exchanges instead of 'topics'. Since each exchange is a domain like 
+  "weather station measurement data", and route specific kind of data, can't
+  really imagine a scenario where we'd route to 'station.*'
+
 # Iteration 7 -- RabbitMQ topology
 - Topology (exchanges, queues, bindings) is declared via RabbitMQ's
   `definitions.json`, loaded at broker boot -- not auto-declared by either

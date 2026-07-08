@@ -37,7 +37,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 - [x] `weather-generator` part 2: seed some recent temperature measurements
       directly into the DB, so the current-weather endpoint has data before
       any live messages have flowed
-- [ ] RabbitMQ topology: `stations` exchange, `stations.temperature` queue +
+- [x] RabbitMQ topology: `stations` exchange, `stations.temperature` queue +
       binding declared via `definitions.json` (durable, so it exists before
       either app connects regardless of start order)
 - [ ] `weather-generator` part 3: publish fake `station_measurements` XML
