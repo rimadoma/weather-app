@@ -40,7 +40,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 - [x] RabbitMQ topology: `stations` exchange, `stations.temperature` queue +
       binding declared via `definitions.json` (durable, so it exists before
       either app connects regardless of start order)
-- [ ] `weather-generator` part 3: publish fake `station_measurements` XML
+- [x] `weather-generator` part 3: publish fake `station_measurements` XML
       (temperature only for now) to RabbitMQ on a per-station schedule,
       continuing to simulate live data as we go (persistent messages,
       `delivery_mode: 2`)
@@ -101,3 +101,4 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 
 - Deploy to Docker Desktop Kubernetes with `skaffold dev`
 - `REFRESH ... CONCURRENTLY` upgrade for the matview
+- Refactor RabbitMQ listeners and publishers into a shared lib module
