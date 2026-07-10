@@ -1,3 +1,28 @@
+# Iteration 10 -- split the list endpoint into /api/cities + /api/weather
+Supersedes iteration 5's single-endpoint list shape:
+- `GET /api/weather?page=N` used to return a page of cities *and* their
+  weather together. Split into two endpoints: `GET /api/cities?page=N`
+  (catalogue only: id, name, full pagination metadata incl. `totalCities`) and
+  `GET /api/weather?page=N` (weather only: `page`/`pageSize`, no
+  `totalCities` -- that number's home is now `/api/cities`). More flexible
+  and closer to how a real API would separate resource listing from a
+  batch/derived lookup.
+- Both endpoints independently compute the identical `ORDER BY name
+  LIMIT/OFFSET` slice over the same static city list -- no id list crosses
+  the wire between them. Rejected alternatives: repeated `cityIds` query
+  params and comma-separated `cityIds` (both awkward for ~25 ids), and a
+  `POST` batch/search endpoint (breaks the read-only-GET convention for what
+  is logically still a read). Page-mirroring is safe specifically because
+  adding/removing cities is out of scope (iteration 3) -- the two endpoints'
+  same-numbered pages can never disagree.
+- The duplicated `ORDER BY/LIMIT/OFFSET` pagination logic between the two
+  query classes is an accepted consequence of the no-shared-DAO principle
+  (iteration 6), not an oversight.
+- `/api/cities`'s `totalCities` comes from a single-query `COUNT(*) OVER()`
+  window function. Edge case: a page past the last page returns zero rows,
+  so there's no row to carry the window-function total -- fall back to a
+  plain `SELECT COUNT(*) FROM cities` only in that case.
+
 # Iteration 9 -- weather-api build tooling note
 - `openapi-generator-maven-plugin` is pinned to 7.23.0, not 7.24.0: despite
   showing up in the plugin's own upstream docs/pom.xml, 7.24.0 isn't actually

@@ -17,6 +17,7 @@ collaborate here:
   questioned.
 - Prefer clarifying questions over assumptions; stop when unclear.
 - Exercise project — not production ready by design. Don't gold-plate.
+- Always write in UK English
 
 ## Design docs = decision log
 

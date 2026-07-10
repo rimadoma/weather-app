@@ -46,12 +46,17 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
       `delivery_mode: 2`)
 - [x] `weather-materialiser`: consume, parse XML leniently, normalise °F to °C,
       skip unknown stations, insert
-- [ ] `weather-api`: `GET /api/weather` with pagination -- temperature average
-      over the past hour, null for cities without data (warnings key present
-      but always empty for now)
-- [ ] Frontend: minimal Vue + Vuex list page rendering the endpoint
+- [ ] `weather-api`: `GET /api/cities` first -- paginated city catalog (id,
+      name), 25/page, alphabetical, `totalCities` via `COUNT(*) OVER()`
+      (fall back to a plain count on an out-of-range page)
+- [ ] `weather-api`: then `GET /api/weather` -- same pagination independently
+      applied (no id list passed in), temperature average over the past
+      hour, null for cities without data (warnings key present but always
+      empty for now)
+- [ ] Frontend: minimal Vue + Vuex list page rendering both endpoints
 - **Checkpoint:** unit tests for XML parsing, unit normalisation, and the skip
-  rule; watch rows arrive in psql while the generator runs; curl the endpoint
+  rule; watch rows arrive in psql while the generator runs; curl both
+  endpoints
 
 ## Slice 2 -- wind
 
