@@ -53,7 +53,9 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
       applied (no id list passed in), temperature average over the past
       hour, null for cities without data (warnings key present but always
       empty for now)
-- [ ] Frontend: minimal Vue + Vuex list page rendering both endpoints
+- [ ] Frontend: Vite + Vue Router skeleton; minimal list page (landing)
+      rendering current weather, composing `/api/weather` + `/api/cities`
+      (see requirements iteration 13 -- no Vuex)
 - **Checkpoint:** unit tests for XML parsing, unit normalisation, and the skip
   rule; watch rows arrive in psql while the generator runs; curl both
   endpoints

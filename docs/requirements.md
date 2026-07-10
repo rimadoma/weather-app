@@ -1,4 +1,47 @@
-# Iteration 12 -- genuine app errors surface as a plain 500
+# Iteration 14 -- OpenAPI spec is the read-API contract, generated on both sides
+Makes explicit a decision only implied until now (iteration 9 pinned the
+generator plugin but never stated the spec-first contract itself):
+- **`weather-api/src/main/resources/openapi/weather-api.yaml` is the single
+  source of truth** for the read API's endpoints and response shapes.
+  Spec-first (design-first): the YAML is hand-authored and code is generated
+  *from* it on both sides -- not code-first (Java annotations -> emitted spec).
+- **Backend** generates from it at build time via
+  `openapi-generator-maven-plugin` (`spring` generator, `interfaceOnly` ->
+  Java API interfaces + model DTOs that the controllers implement). Version
+  pin is in iteration 9.
+- **Frontend** generates TypeScript types from the *same* file via
+  `openapi-typescript` (`npm run gen:api` -> `src/types/weather-api.ts`,
+  consumed through friendly aliases in `src/types/weather.ts`). Types only --
+  no runtime client is generated; requests still go through the hand-written
+  Axios client (iteration 13).
+- **Payoff:** the contract can't drift silently across the language boundary.
+  If the spec changes and one side lags, that side fails to *compile* (`vue-tsc`
+  on the frontend, the Maven build on the backend) rather than breaking at
+  runtime.
+- Tooling caveat (cf. iteration 9): `openapi-typescript` still peer-pins
+  `typescript@^5.x` but runs fine on the project's TypeScript 6; the frontend
+  sets `legacy-peer-deps=true` (in `.npmrc`) to accept that cosmetic mismatch.
+
+# Iteration 13 -- frontend shape: no state library, Vue Router, Vite, Axios
+Supersedes iteration 0's "Vue.js / Vuex frontend" -- Vuex is dropped.
+- **No client-side state library.** The frontend is two read-only pages with no
+  shared, mutable state worth centralising: each page fetches on navigation and
+  renders. Route params + component-local state cover it. Vuex was an early
+  assumption, not a real need; keeping it (or Pinia) would be contrived
+  ceremony. This drops "learn Vuex" as a project goal -- jOOQ and Vue.js remain.
+- **Vue Router** drives the two pages.
+- **Two pages**, mapping onto the read API:
+  - Landing / list page -- the city list with current weather. Composes *both*
+    list endpoints: `GET /api/weather?page=N` for the readings (id, name,
+    temperature, ...) and `GET /api/cities?page=N` for `totalCities`, which the
+    weather endpoint deliberately doesn't return (iteration 10) but the
+    pagination controls need. Same page number to both, safe by iteration 10's
+    page-mirroring guarantee.
+  - Detail page -- one city's past week, `GET /api/weather/:id`, with the simple
+    line graph.
+- **Axios** for backend queries. **Vite** as the dev/build tool.
+
+
 - Errors that indicate a real bug or broken precondition (e.g. querying the
   `station_cities` materialised view before it's ever been refreshed) are
   allowed to bubble up as a 500 with a generic "Something went wrong" body --

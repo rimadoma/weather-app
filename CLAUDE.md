@@ -2,11 +2,11 @@
 
 A backend-oriented learning project: fake real-time weather data flows from a
 test generator through RabbitMQ into PostgreSQL, served by a read-only REST API
-with a small Vue.js/Vuex frontend.
+with a small Vue.js frontend.
 
 ## Purpose and ground rules (important)
 
-The developer's goal is to **learn jOOQ, Vue.js, and Vuex** and refresh Spring
+The developer's goal is to **learn jOOQ and Vue.js** and refresh Spring
 Boot & PostgreSQL. Backend matters more than frontend. This shapes how AI must
 collaborate here:
 
@@ -35,7 +35,8 @@ don't write new iterations until they have been discussed and agreed.
 
 Java 25, Spring Boot 4.x (Spring Framework 7), Maven 3.9.x, PostgreSQL via
 jOOQ (ideally no raw SQL — accepted exceptions are documented in the docs),
-RabbitMQ, Flyway. Frontend: Vue.js + Vuex.
+RabbitMQ, Flyway. Frontend: Vue.js (Vite, Vue Router, Axios; no state
+library — see requirements iteration 13).
 
 ## Verify before asserting (fast-moving stack)
 
