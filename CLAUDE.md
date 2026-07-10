@@ -37,6 +37,22 @@ Java 25, Spring Boot 4.x (Spring Framework 7), Maven 3.9.x, PostgreSQL via
 jOOQ (ideally no raw SQL — accepted exceptions are documented in the docs),
 RabbitMQ, Flyway. Frontend: Vue.js + Vuex.
 
+## Verify before asserting (fast-moving stack)
+
+This project deliberately tracks bleeding-edge major versions (Spring Boot 4,
+jOOQ 3.21, Flyway 12, Java 25) that are newer than most training data — and
+often newer than cached doc snippets too, Context7 included. Don't assert how
+an API, package, or artifact works from memory or a single doc lookup:
+
+- Cross-check against what's actually installed for this repo (e.g. inspect
+  the real jar/class in `~/.m2`, or the generated sources) before relying on
+  a class name, package path, or config property.
+- If something fails unexpectedly (wrong package, missing class, unexpected
+  config key), the first hypothesis should be "this version differs from what
+  I assumed", not a deeper bug elsewhere.
+- Treat Context7/doc snippets as a starting point, not confirmation — they
+  can still lag or cite a different version than the one pinned here.
+
 ## Planned module layout (iteration 6)
 
 Maven multi-module: `weather-db` (Flyway migrations, jOOQ codegen, thin query
