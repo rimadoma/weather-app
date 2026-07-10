@@ -1,3 +1,16 @@
+# Iteration 12 -- genuine app errors surface as a plain 500
+- Errors that indicate a real bug or broken precondition (e.g. querying the
+  `station_cities` materialised view before it's ever been refreshed) are
+  allowed to bubble up as a 500 with a generic "Something went wrong" body --
+  not caught and turned into an empty/degraded response.
+- Out of scope: structured error codes/bodies for diagnosis (error IDs,
+  detail fields, etc.) -- a bare 500 is enough for this project.
+
+# Iteration 11 -- `page` is now required on both list endpoints
+- `?page=N` is mandatory on `/api/cities` and `/api/weather` -- no default,
+  no "fetch all" mode. An unpaginated/"get all cities" path is out of scope
+  for now.
+
 # Iteration 10 -- split the list endpoint into /api/cities + /api/weather
 Supersedes iteration 5's single-endpoint list shape:
 - `GET /api/weather?page=N` used to return a page of cities *and* their

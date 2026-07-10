@@ -1,13 +1,21 @@
 package org.example.weather.api;
 
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+// Must outrank GenericExceptionHandler's catch-all: without an explicit
+// order, @ControllerAdvice beans are consulted in registration order and
+// the first one with any applicable handler wins, regardless of
+// specificity -- so an unordered Exception.class handler could shadow this.
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
-public class ValidationExceptionHandler {
+public class ValidationExceptionHandler extends ResponseEntityExceptionHandler {
 
     // Generated *Api interfaces carry a class-level @Validated, which
     // validates request params via an AOP proxy that throws this raw

@@ -49,7 +49,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 - [x] `weather-api`: `GET /api/cities` first -- paginated city catalog (id,
       name), 25/page, alphabetical, `totalCities` via `COUNT(*) OVER()`
       (fall back to a plain count on an out-of-range page)
-- [ ] `weather-api`: then `GET /api/weather` -- same pagination independently
+- [x] `weather-api`: then `GET /api/weather` -- same pagination independently
       applied (no id list passed in), temperature average over the past
       hour, null for cities without data (warnings key present but always
       empty for now)

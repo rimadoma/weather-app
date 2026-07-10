@@ -14,11 +14,10 @@ paths:
       parameters:
         - name: page
           in: query
-          required: false
+          required: true
           schema:
             type: integer
             minimum: 1
-            default: 1
       responses:
         "200":
           description: A page of cities.
@@ -39,11 +38,10 @@ paths:
       parameters:
         - name: page
           in: query
-          required: false
+          required: true
           schema:
             type: integer
             minimum: 1
-            default: 1
       responses:
         "200":
           description: A page of cities with their current weather.
