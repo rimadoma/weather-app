@@ -1,4 +1,4 @@
-package org.example.weather.generator.seed;
+package org.example.weather.generator.seeders;
 
 import org.example.weather.db.generated.tables.records.RegionsRecord;
 import org.jooq.DSLContext;

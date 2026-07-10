@@ -1,4 +1,4 @@
-package org.example.weather.generator.seed;
+package org.example.weather.generator.seeders;
 
 import org.jooq.DSLContext;
 import org.slf4j.Logger;

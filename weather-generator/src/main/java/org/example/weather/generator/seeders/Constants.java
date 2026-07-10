@@ -1,4 +1,4 @@
-package org.example.weather.generator.seed;
+package org.example.weather.generator.seeders;
 
 import java.io.BufferedReader;
 import java.io.IOException;

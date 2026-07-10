@@ -1,4 +1,4 @@
-package org.example.weather.generator.seed;
+package org.example.weather.generator.seeders;
 
 import org.example.weather.db.generated.tables.records.CitiesRecord;
 import org.jooq.DSLContext;
@@ -15,7 +15,7 @@ import java.util.Random;
 
 import static org.example.weather.db.generated.Tables.CITIES;
 import static org.example.weather.db.generated.Tables.REGIONS;
-import static org.example.weather.generator.seed.Constants.*;
+import static org.example.weather.generator.seeders.Constants.*;
 
 /**
  * Seeds one city per name in {@link Constants#CITY_NAMES}, each assigned a

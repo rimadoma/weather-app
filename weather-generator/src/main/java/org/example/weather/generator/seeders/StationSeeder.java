@@ -1,4 +1,4 @@
-package org.example.weather.generator.seed;
+package org.example.weather.generator.seeders;
 
 import org.example.weather.db.generated.tables.records.StationsRecord;
 import org.jooq.DSLContext;
@@ -15,8 +15,8 @@ import java.util.Random;
 
 import static org.example.weather.db.generated.Tables.CITIES;
 import static org.example.weather.db.generated.Tables.STATIONS;
-import static org.example.weather.generator.seed.Constants.UK_LAT_RANGE;
-import static org.example.weather.generator.seed.Constants.UK_LNG_RANGE;
+import static org.example.weather.generator.seeders.Constants.UK_LAT_RANGE;
+import static org.example.weather.generator.seeders.Constants.UK_LNG_RANGE;
 
 /**
  * Seeds a handful of stations per city, each with a generated serial number
