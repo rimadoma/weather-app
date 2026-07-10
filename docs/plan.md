@@ -46,7 +46,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
       `delivery_mode: 2`)
 - [x] `weather-materialiser`: consume, parse XML leniently, normalise °F to °C,
       skip unknown stations, insert
-- [ ] `weather-api`: `GET /api/cities` first -- paginated city catalog (id,
+- [x] `weather-api`: `GET /api/cities` first -- paginated city catalog (id,
       name), 25/page, alphabetical, `totalCities` via `COUNT(*) OVER()`
       (fall back to a plain count on an out-of-range page)
 - [ ] `weather-api`: then `GET /api/weather` -- same pagination independently
