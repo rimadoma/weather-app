@@ -9,4 +9,6 @@ Includes a test data generator that can be used to seed historical data and to p
 5. Run weather-generator if you need to seed the DB and publish test messages
 6. Run the materialiser if you want test messages to be written to the DB
 7. Run the API
-8. Build and start the frontend with `npm install && npm run dev`
+8. Install frontend deps `npm install` (from `weather-frontend/`)
+9. Generate the frontend API types `npm run gen:api` (rerun whenever `weather-api/src/main/resources/openapi/weather-api.yaml` changes)
+10. Start the frontend with `npm run dev`

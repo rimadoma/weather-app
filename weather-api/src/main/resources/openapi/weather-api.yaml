@@ -5,36 +5,12 @@ info:
   version: "1.0"
 
 paths:
-  /api/cities:
-    get:
-      operationId: getCities
-      tags:
-        - cities
-      summary: Paginated catalog of cities (id and name only, no weather data).
-      parameters:
-        - name: page
-          in: query
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-      responses:
-        "200":
-          description: A page of cities.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CityListResponse"
-
   /api/weather:
     get:
       operationId: getCurrentWeather
       tags:
         - weather
-      summary: >-
-        Current weather for a page of cities. Pages over the same
-        alphabetical city ordering as GET /api/cities -- request the same
-        page number from both to line up city catalog and weather data.
+      summary: Current weather for a page of cities, ordered alphabetically by name.
       parameters:
         - name: page
           in: query
@@ -52,33 +28,6 @@ paths:
 
 components:
   schemas:
-    CityListResponse:
-      type: object
-      required:
-        - metadata
-        - cities
-      properties:
-        metadata:
-          $ref: "#/components/schemas/PageMetadata"
-        cities:
-          type: array
-          items:
-            $ref: "#/components/schemas/CityRef"
-
-    CityRef:
-      type: object
-      required:
-        - id
-        - name
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 42
-        name:
-          type: string
-          example: Berryham-upon-Wicket
-
     WeatherListResponse:
       type: object
       required:
@@ -93,19 +42,6 @@ components:
             $ref: "#/components/schemas/CitySummary"
 
     WeatherPageMetadata:
-      type: object
-      required:
-        - page
-        - pageSize
-      properties:
-        page:
-          type: integer
-          example: 1
-        pageSize:
-          type: integer
-          example: 25
-
-    PageMetadata:
       type: object
       required:
         - page

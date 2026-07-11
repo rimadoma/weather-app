@@ -21,6 +21,7 @@ import static org.example.weather.db.generated.Tables.REGIONS;
 import static org.example.weather.db.generated.Tables.SCALAR_MEASUREMENTS;
 import static org.example.weather.db.generated.Tables.STATIONS;
 import static org.example.weather.db.generated.Tables.STATION_CITIES;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -73,6 +74,19 @@ class WeatherControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.cities[0].warnings").isEmpty());
     }
 
+    @Test
+    void ordersCitiesAlphabeticallyWithTotalCount() throws Exception {
+        insertCity("Zetown");
+        insertCity("Ambridge");
+        insertCity("Middleford");
+        refreshStationCities();
+
+        mockMvc.perform(get("/api/weather").param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.metadata.totalCities").value(3))
+                .andExpect(jsonPath("$.cities[*].name", contains("Ambridge", "Middleford", "Zetown")));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"0", "-1", "-100", "abc"})
     void rejectsInvalidPage(String page) throws Exception {
@@ -84,9 +98,11 @@ class WeatherControllerTest extends AbstractIntegrationTest {
     void returnsEmptyCitiesPastLastPageWithoutError() throws Exception {
         insertCity("Ambridge");
 
+        // Total count still reported past the last page, via the fetchCount fallback
         mockMvc.perform(get("/api/weather").param("page", "2"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.cities").isEmpty());
+                .andExpect(jsonPath("$.cities").isEmpty())
+                .andExpect(jsonPath("$.metadata.totalCities").value(1));
     }
 
     @Test

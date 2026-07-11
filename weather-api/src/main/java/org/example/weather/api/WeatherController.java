@@ -5,6 +5,8 @@ import org.example.weather.api.generated.model.CitySummary;
 import org.example.weather.api.generated.model.WeatherListResponse;
 import org.example.weather.api.generated.model.WeatherPageMetadata;
 import org.jooq.DSLContext;
+import org.jooq.Record3;
+import org.jooq.Result;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -13,12 +15,15 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.example.weather.api.Constants.PAGE_SIZE;
+import static org.example.weather.api.Constants.TOTAL_COUNT;
 import static org.example.weather.db.generated.Tables.*;
 import static org.jooq.impl.DSL.avg;
+import static org.jooq.impl.DSL.count;
 
 @RestController
 public class WeatherController implements WeatherApi {
@@ -32,19 +37,31 @@ public class WeatherController implements WeatherApi {
     @Override
     public ResponseEntity<WeatherListResponse> getCurrentWeather(Integer page) {
         OffsetDateTime startTime = OffsetDateTime.now(ZoneOffset.UTC).minusHours(1);
-        WeatherPageMetadata metadata = new WeatherPageMetadata(page, PAGE_SIZE);
 
-        // Query cities
+        // Query cities for this page, plus the total city count via a window function
         int offset = (page - 1) * PAGE_SIZE;
-        Map<Long, String> cities = db.select(CITIES.ID, CITIES.NAME)
+        Result<Record3<Long, String, Integer>> cityRecords = db
+                .select(CITIES.ID, CITIES.NAME, count().over().as(TOTAL_COUNT))
                 .from(CITIES)
                 .orderBy(CITIES.NAME)
                 .offset(offset)
                 .limit(PAGE_SIZE)
-                .fetchMap(CITIES.ID, CITIES.NAME);
-        if (cities.isEmpty()) {
+                .fetch();
+
+        final int totalCount;
+        final WeatherPageMetadata metadata;
+        if (cityRecords.isEmpty()) {
+            // Fall back to a plain count
+            totalCount = db.fetchCount(CITIES);
+            metadata = new WeatherPageMetadata(page, PAGE_SIZE, totalCount);
             return ResponseEntity.ok(new WeatherListResponse(metadata, new ArrayList<>()));
+        } else {
+            totalCount = cityRecords.getFirst().value3();
+            metadata = new WeatherPageMetadata(page, PAGE_SIZE, totalCount);
         }
+
+        Map<Long, String> cities = new LinkedHashMap<>();
+        cityRecords.forEach(record -> cities.put(record.value1(), record.value2()));
 
         // Average temperature per city, joined through the materialised view
         Map<Long, BigDecimal> averageTemperatureByCity = db

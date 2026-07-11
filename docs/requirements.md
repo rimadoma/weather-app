@@ -1,3 +1,18 @@
+# Iteration 15 -- drop /api/cities; totalCities moves back onto /api/weather
+Partly reverses iteration 10's split: the catalogue-only `GET /api/cities`
+endpoint is removed entirely, and `totalCities` returns to
+`/api/weather`'s page metadata (restoring iteration 5's response shape).
+- **Why.** The frontend never needed the city catalogue for its own sake --
+  the *only* thing it took from `/api/cities` was `totalCities`, to size the
+  pagination controls (iteration 13). `/api/weather` already computes the
+  identical `ORDER BY name LIMIT/OFFSET` city slice, so it can return the
+  count essentially for free.
+- **Where the count comes from.** Unchanged from iteration 10, just relocated:
+  a single-query `COUNT(*) OVER()` window function on the weather query, with
+  the same edge case -- a page past the last returns zero rows and so no row
+  to carry the window total, so fall back to a plain `SELECT COUNT(*) FROM
+  cities` only then.
+
 # Iteration 14 -- OpenAPI spec is the read-API contract, generated on both sides
 Makes explicit a decision only implied until now (iteration 9 pinned the
 generator plugin but never stated the spec-first contract itself):
