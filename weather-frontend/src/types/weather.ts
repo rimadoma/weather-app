@@ -5,8 +5,6 @@ import type { components } from './weather-api'
 
 type Schemas = components['schemas']
 
-export type CityRef = Schemas['CityRef']
 export type CitySummary = Schemas['CitySummary']
 export type Warning = Schemas['Warning']
-export type CityListResponse = Schemas['CityListResponse']
 export type WeatherListResponse = Schemas['WeatherListResponse']

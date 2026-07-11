@@ -46,19 +46,21 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
       `delivery_mode: 2`)
 - [x] `weather-materialiser`: consume, parse XML leniently, normalise °F to °C,
       skip unknown stations, insert
-- [x] `weather-api`: `GET /api/cities` first -- paginated city catalog (id,
-      name), 25/page, alphabetical, `totalCities` via `COUNT(*) OVER()`
-      (fall back to a plain count on an out-of-range page)
-- [x] `weather-api`: then `GET /api/weather` -- same pagination independently
-      applied (no id list passed in), temperature average over the past
-      hour, null for cities without data (warnings key present but always
-      empty for now)
-- [ ] Frontend: Vite + Vue Router skeleton; minimal list page (landing)
-      rendering current weather, composing `/api/weather` + `/api/cities`
-      (see requirements iteration 13 -- no Vuex)
+- [x] ~~`weather-api`: `GET /api/cities` first -- paginated city catalog (id,
+      name), 25/page, alphabetical, `totalCities` via `COUNT(*) OVER()`~~
+      (later removed in requirements iteration 15: the frontend only needed
+      `totalCities`, so it moved back onto `/api/weather` and this endpoint
+      was dropped)
+- [x] `weather-api`: `GET /api/weather` -- paginated (25/page, alphabetical,
+      no id list passed in), temperature average over the past hour, null for
+      cities without data (warnings key present but always empty for now),
+      `totalCities` via `COUNT(*) OVER()` (fall back to a plain count on an
+      out-of-range page)
+- [x] Frontend: Vite + Vue Router skeleton; minimal list page (landing)
+      rendering current weather from `/api/weather`, with query-param
+      pagination (`?page=N`, active page highlighted)
 - **Checkpoint:** unit tests for XML parsing, unit normalisation, and the skip
-  rule; watch rows arrive in psql while the generator runs; curl both
-  endpoints
+  rule; watch rows arrive in psql while the generator runs; curl the endpoint
 
 ## Slice 2 -- wind
 
