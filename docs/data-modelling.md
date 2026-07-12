@@ -1,3 +1,7 @@
+# Iteration 7 -- wind_measurements.speed gains a non-negative CHECK
+Added `CHECK (speed >= 0)` -- forgot it in iteration 2, and it's in line with
+the direction and coordinate checks.
+
 # Iteration 6 -- scalar_measurements.type is VARCHAR + CHECK, not ENUM
 Postgres ENUM values can only be extended with `ALTER TYPE ... ADD VALUE`, which
 can't be used in the same transaction as anything that reads the new value --

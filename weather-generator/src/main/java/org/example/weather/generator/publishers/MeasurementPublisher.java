@@ -60,17 +60,33 @@ public class MeasurementPublisher {
             return;
         }
 
+        // Leave 0 -- 10 % stations without data to simulate real world & help testing
         shuffle(serialNos);
-        int nStations = rng.nextInt(serialNos.length) + 1;
+        int minStations = (int) (serialNos.length * 0.9);
+        int stationVariance = (int) (serialNos.length * 0.1) + 1;
+        int nStations = rng.nextInt(stationVariance) + minStations;
 
         for (int i = 0; i < nStations; i++) {
             log.info("Publishing measurements for station: {}", serialNos[i]);
-            Message message = generateMessage(serialNos[i]);
-            amqpTemplate.send(rabbitMqProperties.stationsExchange(), rabbitMqProperties.temperatureRoutingKey(), message);
+
+            boolean partialReadings = rng.nextDouble() < 0.05;
+            boolean tempMissing = rng.nextBoolean();
+            long nowEpoch = Instant.now().getEpochSecond();
+
+            // Small change that either wind or temp is missing, so that we can test partial data
+            if (!partialReadings || !tempMissing) {
+                Message message = generateTempMessage(serialNos[i], nowEpoch);
+                amqpTemplate.send(rabbitMqProperties.stationsExchange(), rabbitMqProperties.temperatureRoutingKey(), message);
+            }
+
+            if (!partialReadings || tempMissing) {
+                Message windMessage = generateWindMessage(serialNos[i], nowEpoch);
+                amqpTemplate.send(rabbitMqProperties.stationsExchange(), rabbitMqProperties.windRoutingKey(), windMessage);
+            }
         }
     }
 
-    public static void shuffle (String[] array) {
+    public static void shuffle(String[] array) {
         int n = array.length;
         while (n > 1) {
             int k = rng.nextInt(n--);
@@ -80,19 +96,36 @@ public class MeasurementPublisher {
         }
     }
 
-    private Message generateMessage(String stationSerialNo) {
-        // TODO: generate wind measurements too
-        // TODO: with a small change some measurements are missing
-
+    private Message generateTempMessage(String stationSerialNo, long nowEpoch) {
         double celsius = rng.nextDouble(-5.0, 35.0);
         boolean fahrenheit = rng.nextBoolean();
         double reading = fahrenheit ? celsius * 9.0 / 5.0 + 32.0 : celsius;
         String unit = fahrenheit ? "°F" : "°C";
         Measurement temperature = new Measurement(
-                "temperature", String.format("%.2f", reading), unit, Instant.now().getEpochSecond());
+                "temperature", String.format("%.2f", reading), unit, nowEpoch);
 
         StationMeasurements measurements = new StationMeasurements(stationSerialNo);
         measurements.addMeasurement(temperature);
+
+        byte[] bytes = xmlMapper.writeValueAsString(measurements).getBytes(StandardCharsets.UTF_8);
+        return new Message(bytes, properties);
+    }
+
+
+    private Message generateWindMessage(String serialNo, long nowEpoch) {
+        double metresPerSecond = rng.nextDouble() * 25.0;
+        boolean mph = rng.nextBoolean();
+        // 1 m/s = 2.2369 mph; the materialiser normalises mph back to m/s
+        double speed = mph ? metresPerSecond * 2.2369362920544 : metresPerSecond;
+        String speedUnit = mph ? "mph" : "m/s";
+        Measurement windSpeed = new Measurement("wind_speed", String.format("%.1f", speed), speedUnit, nowEpoch);
+
+        short direction = (short) rng.nextInt(360);
+        Measurement windDirection = new Measurement("wind_direction", String.valueOf(direction), "degree", nowEpoch);
+
+        StationMeasurements measurements = new StationMeasurements(serialNo);
+        measurements.addMeasurement(windSpeed);
+        measurements.addMeasurement(windDirection);
 
         byte[] bytes = xmlMapper.writeValueAsString(measurements).getBytes(StandardCharsets.UTF_8);
         return new Message(bytes, properties);

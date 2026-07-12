@@ -1,6 +1,19 @@
 A web app that shows basic weather data for cities. Can view temperature and wind now or over the past week. Also displays active weather warnings. A learning project for brushing up on Java, Spring Boot, jOOQ, PostGreSQL and Vue.js. 
 Includes a test data generator that can be used to seed historical data and to produce messages over RabbitMQ for "real time" measurements. I tried to work with Claude Code in a way where both the workflow and human-AI interaction would be as visible as possible. Project started from iteration 0 where I provided the initial requirements and context (see /docs).
 
+# Architecture
+A Maven multi-module backend plus a Vue frontend. Data flows one way: the
+generator publishes fake measurements to RabbitMQ, the materialiser writes them
+into PostgreSQL, and the API serves them to the frontend.
+
+- **weather-db** -- Flyway migrations and jOOQ code generation for the schema, plus a thin shared query toolbox. The other modules build on its generated classes.
+- **weather-generator** -- seeds regions, cities and stations (and historic data) directly into the DB, then publishes fake "real-time" measurement messages to RabbitMQ.
+- **weather-materialiser** -- consumes those messages, parses and normalises them (units, wind pairing, skip rules), and writes them to PostgreSQL.
+- **weather-api** -- read-only REST API over the DB, written in jOOQ; its contract is the hand-authored OpenAPI spec that both sides generate from.
+- **weather-frontend** -- Vue.js (Vite) single-page app that consumes the REST API. Two pages: the city list and a per-city detail view.
+- **PostgreSQL** -- normalised store for regions, cities, stations and measurements.
+- **RabbitMQ** -- message broker carrying station measurements from the generator to the materialiser. Topology in 'infra/'.
+
 # How to dev
 1. Start PostGreSql (`docker compose up`)
 2. Run migrations `mvn -pl weather-db flyway:migrate` (one time prerequisite)

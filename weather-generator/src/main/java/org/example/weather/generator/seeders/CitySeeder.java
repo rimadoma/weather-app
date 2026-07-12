@@ -55,6 +55,6 @@ public class CitySeeder implements ApplicationRunner {
         }
 
         int inserted = insert.onConflictDoNothing().execute();
-        log.info("Seeded cities: {} inserted", inserted);
+        log.info("Seeded cities: {} inserted, {} already present", inserted, CITY_NAMES.length - inserted);
     }
 }
