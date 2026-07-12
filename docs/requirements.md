@@ -1,3 +1,32 @@
+# Iteration 16 -- materialisers ingest best-effort
+Generalises the skip rules already applied piecemeal (iteration 4's wind
+pairing, and temperature's per-reading unit/parse skips) into one principle for
+every materialiser:
+- **Best-effort ingest.** A station message is a bag of independent
+  measurements from an unreliable field device, not an all-or-nothing
+  transaction. Salvage and persist every good reading; skip only the parts that
+  are malformed, out of range, unpairable, or otherwise unusable -- one bad
+  entry never discards the good ones alongside it.
+- **Log what was dodgy.** Every skip is logged (station serial + reason) so bad
+  data is diagnosable rather than silently swallowed. The batch still writes;
+  the log is the audit trail.
+- **Scope: within an otherwise valid message.** This covers data-quality
+  problems inside a parseable message from a known station: unknown or
+  unnormalisable units, unparseable numbers, out-of-range values (e.g. wind
+  direction outside 0-359, negative speed), and unpaired wind halves. It does
+  *not* soften the two whole-message drops: malformed XML is logged and dropped
+  entire (nothing to salvage), and a message from an unknown station is skipped
+  entire (iteration 3).
+- **Why not reject the whole message.** Readings come from many independent
+  stations on their own schedules; a single flaky sensor value shouldn't cost
+  the other good readings in the same message, and there is no upstream worth
+  nacking to that would ever correct the data.
+- **Contrast with the read side.** The API deliberately lets a genuine
+  broken-precondition bug bubble up as a 500 rather than degrade (the
+  error-handling decision above iteration 11). Ingest takes the opposite
+  stance because bad field data is *expected input*, not a bug -- the two
+  layers face different kinds of failure.
+
 # Iteration 15 -- drop /api/cities; totalCities moves back onto /api/weather
 Partly reverses iteration 10's split: the catalogue-only `GET /api/cities`
 endpoint is removed entirely, and `totalCities` returns to

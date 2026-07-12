@@ -12,3 +12,4 @@ spring:
 weather:
   rabbitmq:
     temperature-queue: stations.temperature.queue
+    wind-queue: stations.wind.queue

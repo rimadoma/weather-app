@@ -8,8 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
-import tools.jackson.core.JacksonException;
-import tools.jackson.dataformat.xml.XmlMapper;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -17,16 +15,14 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-import static org.example.weather.db.generated.Tables.STATIONS;
 import static org.example.weather.db.generated.tables.ScalarMeasurements.SCALAR_MEASUREMENTS;
 
 @Component
 public class TemperatureListener {
 
     private static final Logger log = LoggerFactory.getLogger(TemperatureListener.class);
-
-    private static final XmlMapper xmlMapper = new XmlMapper();
 
     private final DSLContext db;
 
@@ -36,29 +32,19 @@ public class TemperatureListener {
 
     @RabbitListener(queues = "${weather.rabbitmq.temperature-queue}")
     public void onMessage(String xml) {
-        StationMeasurements message;
-        try {
-            message = xmlMapper.readValue(xml, StationMeasurements.class);
-        } catch (JacksonException e) {
-            // Malformed message -- retrying won't fix it, so log and drop
-            // rather than letting it propagate into a nack/requeue loop.
-            // No parsed object to identify it by yet, so log the raw XML.
-            log.error("Failed to parse station_measurements XML: {}", xml, e);
+        StationMeasurements message = Utils.parse(xml, log);
+        if (message == null) {
             return;
         }
 
-        List<StationMeasurements.Measurement> measurements = message.measurements.stream().filter(m -> "temperature".equals(m.type())).toList();
-
+        List<StationMeasurements.Measurement> measurements = Utils.filterRelevantMeasures(message, Set.of("temperature"));
         if (measurements.isEmpty()) {
-            log.error("Temperature listener received no temperature measurements for station {}", message.serialNumber);
+            log.error("Received no temperature measurements for station {}", message.serialNumber);
             return;
         }
 
-        Optional<Long> stationId = db.select(STATIONS.ID).from(STATIONS)
-                .where(STATIONS.SERIAL_NO.eq(message.serialNumber))
-                .fetchOptional(STATIONS.ID);
+        Optional<Long> stationId = Utils.queryStationId(db, message.serialNumber, log);
         if (stationId.isEmpty()) {
-            log.warn("Skipping measurements for unknown station {}", message.serialNumber);
             return;
         }
 

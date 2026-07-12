@@ -121,7 +121,7 @@ public class MeasurementPublisher {
         Measurement windSpeed = new Measurement("wind_speed", String.format("%.1f", speed), speedUnit, nowEpoch);
 
         short direction = (short) rng.nextInt(360);
-        Measurement windDirection = new Measurement("wind_direction", String.valueOf(direction), "degree", nowEpoch);
+        Measurement windDirection = new Measurement("wind_direction", String.valueOf(direction), "degrees", nowEpoch);
 
         StationMeasurements measurements = new StationMeasurements(serialNo);
         measurements.addMeasurement(windSpeed);

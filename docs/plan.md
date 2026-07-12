@@ -66,7 +66,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 
 - [x] Migration: `wind_measurements`
 - [x] Generator: seed & emit wind speed + direction entries (mixed m/s and mph)
-- [ ] Materialiser: pairing rule -- match speed/direction by timestamp within
+- [x] Materialiser: pairing rule -- match speed/direction by timestamp within
       one message, skip unpaired halves; normalise mph to m/s
 - [ ] API: add wind speed (plain mean) and wind direction (vector/circular
       mean) to the list endpoint
