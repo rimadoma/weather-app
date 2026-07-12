@@ -82,11 +82,16 @@ components:
           type: number
           format: double
           nullable: true
-          description: Not populated yet -- always null until wind measurements land.
+          description: Mean wind speed in m/s over the past hour, null if no readings.
+          example: 1.4
         windDirection:
           type: integer
           nullable: true
-          description: Not populated yet -- always null until wind measurements land.
+          description: >-
+            Speed-weighted mean wind direction in whole degrees (meteorological
+            convention: blowing from, 0 = north) over the past hour, null if no
+            readings. Always paired with windSpeed: both null or both present.
+          example: 40
         warnings:
           type: array
           description: Warnings active at query time. Always empty until weather warnings land.

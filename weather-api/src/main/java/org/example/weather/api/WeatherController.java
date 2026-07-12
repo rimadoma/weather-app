@@ -5,6 +5,7 @@ import org.example.weather.api.generated.model.CitySummary;
 import org.example.weather.api.generated.model.WeatherListResponse;
 import org.example.weather.api.generated.model.WeatherPageMetadata;
 import org.jooq.DSLContext;
+import org.jooq.Record2;
 import org.jooq.Record3;
 import org.jooq.Result;
 import org.springframework.http.ResponseEntity;
@@ -13,17 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.example.weather.api.Constants.PAGE_SIZE;
 import static org.example.weather.api.Constants.TOTAL_COUNT;
 import static org.example.weather.db.generated.Tables.*;
-import static org.jooq.impl.DSL.avg;
-import static org.jooq.impl.DSL.count;
+import static org.jooq.impl.DSL.*;
 
 @RestController
 public class WeatherController implements WeatherApi {
@@ -47,7 +43,6 @@ public class WeatherController implements WeatherApi {
                 .offset(offset)
                 .limit(PAGE_SIZE)
                 .fetch();
-
         final int totalCount;
         final WeatherPageMetadata metadata;
         if (cityRecords.isEmpty()) {
@@ -59,7 +54,6 @@ public class WeatherController implements WeatherApi {
             totalCount = cityRecords.getFirst().value3();
             metadata = new WeatherPageMetadata(page, PAGE_SIZE, totalCount);
         }
-
         Map<Long, String> cities = new LinkedHashMap<>();
         cityRecords.forEach(record -> cities.put(record.value1(), record.value2()));
 
@@ -76,16 +70,75 @@ public class WeatherController implements WeatherApi {
                 .groupBy(STATION_CITIES.CITY_ID)
                 .fetchMap(STATION_CITIES.CITY_ID, avg(SCALAR_MEASUREMENTS.READING));
 
+        // Query wind measurements and calculate their averages
+        Map<Long, Result<Record3<Long, BigDecimal, Short>>> citiesWinds = db
+                .select(STATION_CITIES.CITY_ID, WIND_MEASUREMENTS.SPEED, WIND_MEASUREMENTS.DIRECTION)
+                .from(WIND_MEASUREMENTS)
+                .join(STATION_CITIES).on(WIND_MEASUREMENTS.STATION_ID.eq(STATION_CITIES.STATION_ID))
+                .where(
+                        STATION_CITIES.CITY_ID.in(cities.keySet()),
+                        WIND_MEASUREMENTS.MEASURED_AT.ge(startTime)
+                )
+                .fetchGroups(STATION_CITIES.CITY_ID);
+        Map<Long, Double> speedAverages = new HashMap<>();
+        Map<Long, Short> directionAverages = new HashMap<>();
+        citiesWinds.forEach((cityId, winds) -> {
+            double avgSpeed = winds.stream().mapToDouble(wind -> wind.value2().doubleValue()).sum() / winds.size();
+            speedAverages.put(cityId, avgSpeed);
+
+            WindVector avgDirVector = new WindVector(0.0, 0.0);
+            winds.stream().map(r -> WindVector.fromWeatherData(r.value3(), r.value2())).forEach(avgDirVector::add);
+            short avgDirection = avgDirVector.toDegrees();
+            directionAverages.put(cityId, avgDirection);
+        });
+
+        // Build response
         List<CitySummary> summaries = cities.entrySet().stream()
                 .map(entry -> {
                     Long cityId = entry.getKey();
+
                     BigDecimal averageTemperature = averageTemperatureByCity.get(cityId);
                     CitySummary summary = new CitySummary(cityId, entry.getValue(), Collections.emptyList());
                     summary.setTemperature(averageTemperature == null ? null : averageTemperature.doubleValue());
+
+                    Double speed = speedAverages.get(cityId);
+                    Short direction = directionAverages.get(cityId);
+                    if (speed != null && direction != null) {
+                        summary.setWindSpeed(speed);
+                        summary.setWindDirection(Integer.valueOf(direction));
+                    }
+
                     return summary;
                 })
                 .toList();
 
         return ResponseEntity.ok(new WeatherListResponse(metadata, summaries));
+    }
+
+    private static class WindVector {
+        private double x;
+        private double y;
+
+        private WindVector(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        private void add(WindVector v) {
+            this.x += v.x;
+            this.y += v.y;
+        }
+
+        private short toDegrees() {
+            long degrees = Math.round(Math.toDegrees(Math.atan2(y, x)));
+            return (short) Math.floorMod(degrees, 360);
+        }
+
+        private static WindVector fromWeatherData(short degrees, BigDecimal speed) {
+            double radians = Math.toRadians(degrees);
+            double x = Math.cos(radians) * speed.doubleValue();
+            double y = Math.sin(radians) * speed.doubleValue();
+            return new WindVector(x, y);
+        }
     }
 }

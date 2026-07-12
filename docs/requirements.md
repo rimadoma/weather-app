@@ -1,3 +1,38 @@
+# Iteration 18 -- wind direction mean is speed-weighted
+Supersedes iteration 2's equal-weight circular mean for wind direction (wind
+speed stays a plain mean; the both-or-neither pairing of iteration 17 is
+unchanged):
+- **Speed-weights the vector mean.** Each reading contributes a vector whose
+  bearing is its direction and whose *length is its speed*: sum the
+  speed*sin and speed*cos components, atan2 back to degrees, normalise into
+  [0, 360). This is the meteorological resultant wind, not an average of unit
+  vectors -- a strong wind pulls the mean direction toward it, a near-calm
+  reading barely nudges it.
+- **Why.** Direction is only half of a wind vector; averaging bearings while
+  discarding magnitude (iteration 2) treats a 1 m/s and a 30 m/s reading as
+  equally authoritative about where the wind blows from, which they are not.
+  Dovetails with iteration 17: direction is meaningless without its magnitude,
+  so the magnitude should weight it.
+- **Applies wherever direction is aggregated** -- the list endpoint now, and
+  the detail-page 6h buckets when slice 4 lands.
+- Toolbox note (iteration 6): the shared vector-mean helper becomes the
+  speed-weighted form rather than plain sines/cosines.
+
+# Iteration 17 -- wind is all-or-nothing: a half reading means an unreliable meter
+Makes explicit an assumption left implicit by iterations 2 and 4, and states its
+consequence for the read API:
+- **A wind reading is one instrument's output.** Speed and direction are the
+  magnitude and bearing of a single vector measured by the same wind meter, not
+  two independent readings that merely travel together. A reading carrying only
+  one half isn't partial data to salvage -- it's taken as a sign the meter is
+  unreliable, so both halves are dropped (the physical rationale behind
+  iteration 4's pairing rule).
+- **API consequence: both-or-neither.** Because every persisted wind row holds
+  both columns (NOT NULL, guaranteed by the pairing rule), the list endpoint's
+  `windSpeed` and `windDirection` aggregate over an identical row set. A city
+  therefore always returns both as numbers or both as null -- never one without
+  the other. Callers and the frontend can rely on this.
+
 # Iteration 16 -- materialisers ingest best-effort
 Generalises the skip rules already applied piecemeal (iteration 4's wind
 pairing, and temperature's per-reading unit/parse skips) into one principle for

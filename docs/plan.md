@@ -68,11 +68,13 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 - [x] Generator: seed & emit wind speed + direction entries (mixed m/s and mph)
 - [x] Materialiser: pairing rule -- match speed/direction by timestamp within
       one message, skip unpaired halves; normalise mph to m/s
-- [ ] API: add wind speed (plain mean) and wind direction (vector/circular
-      mean) to the list endpoint
+- [x] API: add wind speed (plain mean) and wind direction (speed-weighted
+      vector mean -- requirements iteration 18) to the list endpoint
 - [ ] Frontend: show wind on the list page
-- **Checkpoint:** unit tests for pairing and the circular mean (350° and 10°
-  must average to 0°, not 180°); verify in psql that no NULL-direction rows exist
+- **Checkpoint:** unit tests for pairing and the speed-weighted vector
+  direction mean (a stronger wind veers the mean toward it; 350° and 10°
+  resolve near north, never the 180° a naive arithmetic mean gives --
+  requirements iteration 18); verify in psql that no NULL-direction rows exist
 
 ## Slice 3 -- station registration lifecycle
 

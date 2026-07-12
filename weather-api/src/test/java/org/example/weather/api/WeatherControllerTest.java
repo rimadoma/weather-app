@@ -21,6 +21,7 @@ import static org.example.weather.db.generated.Tables.REGIONS;
 import static org.example.weather.db.generated.Tables.SCALAR_MEASUREMENTS;
 import static org.example.weather.db.generated.Tables.STATIONS;
 import static org.example.weather.db.generated.Tables.STATION_CITIES;
+import static org.example.weather.db.generated.Tables.WIND_MEASUREMENTS;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -53,7 +54,7 @@ class WeatherControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void returnsAverageTemperatureForCityWithRecentMeasurements() throws Exception {
+    void returnsAveragesForCityWithRecentMeasurements() throws Exception {
         Long cityId = insertCity("Ambridge");
         Long stationId = insertStation("Ambridge");
         refreshStationCities();
@@ -64,6 +65,14 @@ class WeatherControllerTest extends AbstractIntegrationTest {
         insertTemperatureMeasurement(stationId, BigDecimal.valueOf(20.0), now.minusMinutes(30));
         insertTemperatureMeasurement(stationId, BigDecimal.valueOf(22.0), now.minusMinutes(10));
 
+        // Same 1h window; wind speed is a plain mean (2 and 4 -> 3.0), the old
+        // reading (9.0) is outside it. Both live readings share direction 90, so
+        // the mean is 90 regardless of speed weighting (that is exercised in its
+        // own test); the old reading's 200 is excluded either way.
+        insertWindMeasurement(stationId, BigDecimal.valueOf(9.0), (short) 200, now.minusMinutes(70));
+        insertWindMeasurement(stationId, BigDecimal.valueOf(2.0), (short) 90, now.minusMinutes(30));
+        insertWindMeasurement(stationId, BigDecimal.valueOf(4.0), (short) 90, now.minusMinutes(10));
+
         mockMvc.perform(get("/api/weather").param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.metadata.page").value(1))
@@ -71,7 +80,27 @@ class WeatherControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.cities[0].id").value(cityId))
                 .andExpect(jsonPath("$.cities[0].name").value("Ambridge"))
                 .andExpect(jsonPath("$.cities[0].temperature").value(21.0))
+                .andExpect(jsonPath("$.cities[0].windSpeed").value(3.0))
+                .andExpect(jsonPath("$.cities[0].windDirection").value(90))
                 .andExpect(jsonPath("$.cities[0].warnings").isEmpty());
+    }
+
+    @Test
+    void weightsWindDirectionMeanBySpeed() throws Exception {
+        Long cityId = insertCity("Ambridge");
+        Long stationId = insertStation("Ambridge");
+        refreshStationCities();
+
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        // A strong wind from 350* and a weak 10* one. Speed-weighted, the
+        // mean is pulled toward the stronger reading
+        insertWindMeasurement(stationId, BigDecimal.valueOf(25.0), (short) 350, now.minusMinutes(20));
+        insertWindMeasurement(stationId, BigDecimal.valueOf(5.0), (short) 10, now.minusMinutes(10));
+
+        mockMvc.perform(get("/api/weather").param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cities[0].id").value(cityId))
+                .andExpect(jsonPath("$.cities[0].windDirection").value(353));
     }
 
     @Test
@@ -113,14 +142,35 @@ class WeatherControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void returnsNullTemperatureWhenCityHasNoStations() throws Exception {
+    void returnsNullReadingsWhenCityHasNoStations() throws Exception {
         Long cityId = insertCity("Ambridge");
         refreshStationCities();
 
         mockMvc.perform(get("/api/weather").param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cities[0].id").value(cityId))
-                .andExpect(jsonPath("$.cities[0].temperature").value(nullValue()));
+                .andExpect(jsonPath("$.cities[0].temperature").value(nullValue()))
+                .andExpect(jsonPath("$.cities[0].windSpeed").value(nullValue()))
+                .andExpect(jsonPath("$.cities[0].windDirection").value(nullValue()));
+    }
+
+    @Test
+    void returnsNullWindWhenCityHasTemperatureButNoWind() throws Exception {
+        Long cityId = insertCity("Ambridge");
+        Long stationId = insertStation("Ambridge");
+        refreshStationCities();
+
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        // Temperature present, no wind rows at all: the wind pair nulls out
+        // together (iteration 17), independently of temperature being there.
+        insertTemperatureMeasurement(stationId, BigDecimal.valueOf(19.0), now.minusMinutes(10));
+
+        mockMvc.perform(get("/api/weather").param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cities[0].id").value(cityId))
+                .andExpect(jsonPath("$.cities[0].temperature").value(19.0))
+                .andExpect(jsonPath("$.cities[0].windSpeed").value(nullValue()))
+                .andExpect(jsonPath("$.cities[0].windDirection").value(nullValue()));
     }
 
     @Test
@@ -132,7 +182,9 @@ class WeatherControllerTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/weather").param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cities[0].id").value(cityId))
-                .andExpect(jsonPath("$.cities[0].temperature").value(nullValue()));
+                .andExpect(jsonPath("$.cities[0].temperature").value(nullValue()))
+                .andExpect(jsonPath("$.cities[0].windSpeed").value(nullValue()))
+                .andExpect(jsonPath("$.cities[0].windDirection").value(nullValue()));
     }
 
     @Test
@@ -167,6 +219,13 @@ class WeatherControllerTest extends AbstractIntegrationTest {
         db.insertInto(SCALAR_MEASUREMENTS, SCALAR_MEASUREMENTS.STATION_ID, SCALAR_MEASUREMENTS.TYPE,
                         SCALAR_MEASUREMENTS.READING, SCALAR_MEASUREMENTS.MEASURED_AT)
                 .values(stationId, "temperature", reading, measuredAt)
+                .execute();
+    }
+
+    private void insertWindMeasurement(Long stationId, BigDecimal speed, short direction, OffsetDateTime measuredAt) {
+        db.insertInto(WIND_MEASUREMENTS, WIND_MEASUREMENTS.STATION_ID, WIND_MEASUREMENTS.SPEED,
+                        WIND_MEASUREMENTS.DIRECTION, WIND_MEASUREMENTS.MEASURED_AT)
+                .values(stationId, speed, direction, measuredAt)
                 .execute();
     }
 
