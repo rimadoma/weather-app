@@ -1,3 +1,31 @@
+# Iteration 22 -- aggregation maths in SQL, output formatting in the API
+Splits responsibility for derived read values (starting with wind direction):
+- **weather-db does the set-based maths in SQL.** The toolbox exposes the raw
+  aggregate expressions -- e.g. the speed-weighted direction vector's summed
+  cosine/sine components (iteration 18) -- and the apps group and sum in the
+  database.
+- **The API massages the result into the response format.** Turning those summed
+  components into a bearing in whole degrees (atan2 + normalise) is read-side
+  business logic, shared across the list and detail endpoints so they format
+  identically. Keeps the DB doing what it's good at (aggregation) and leaves
+  presentation to the layer that owns the response shape.
+
+# Iteration 21 -- detail endpoint: 404 for unknown city, 200 for empty history
+Pins down two response cases for `GET /api/weather/{id}` (iteration 5) that were
+left implicit, distinguishing "city doesn't exist" from "city exists but has no
+readings":
+- **Unknown city id -> 404.** A request for an id with no matching city returns
+  `404 Not Found` with no body -- consistent with the error-handling stance
+  (above iteration 11): bare status, no structured error payload. This is a
+  normal client outcome, distinct from the deliberate 500-on-bug case, which is
+  reserved for genuine broken preconditions.
+- **Existing city, no readings -> 200 with a full, null-filled grid.** A known
+  city that simply has no measurements in the window still returns `200` with the
+  complete fixed 6h bucket grid, every bucket carrying null readings -- never an
+  empty `buckets` array and never omitted buckets. This is iteration 5's "missing
+  data is null, never omitted" applied to the whole-city case, and mirrors the
+  list endpoint returning a city with null readings rather than dropping it.
+
 # Iteration 20 -- city matching trusts name and coordinates independently
 Records an accepted limitation of the `station_cities` matching (iterations 3
 and 19), not a change:
