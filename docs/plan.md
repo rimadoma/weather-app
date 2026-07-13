@@ -70,7 +70,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
       one message, skip unpaired halves; normalise mph to m/s
 - [x] API: add wind speed (plain mean) and wind direction (speed-weighted
       vector mean -- requirements iteration 18) to the list endpoint
-- [ ] Frontend: show wind on the list page
+- [x] Frontend: show wind on the list page
 - **Checkpoint:** unit tests for pairing and the speed-weighted vector
   direction mean (a stronger wind veers the mean toward it; 350° and 10°
   resolve near north, never the 180° a naive arithmetic mean gives --
@@ -107,6 +107,22 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 - [ ] Frontend: display warnings on both pages
 - **Checkpoint:** unit tests for the active-window check (future warning is
   stored but not shown); insert a warning by hand in psql and see it appear
+
+## Slice 6 -- crossing the Ts, dotting the Is
+
+A catch-all polish pass once the feature slices land: cross-cutting cleanup and
+niceties that don't belong to any single feature. Grow this list as rough edges
+surface during the earlier slices.
+
+- [ ] Frontend: a reusable error-blurb component for failed fetches. The list
+      (and detail) views currently `await` the API with no try/catch, so a 500
+      -- which the read side deliberately lets bubble (the error-handling block
+      above requirements iteration 11) -- or a network blip leaves the view
+      stale and throws an unhandled rejection. Wrap the fetches and render a
+      friendly "couldn't load weather" message via one shared component on both
+      pages.
+- **Checkpoint:** point the frontend at a stopped (or 500-ing) API and confirm
+  the error blurb renders instead of a blank/half-broken page.
 
 ## Parked (later milestone, not core design)
 

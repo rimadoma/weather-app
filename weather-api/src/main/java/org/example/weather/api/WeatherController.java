@@ -5,7 +5,6 @@ import org.example.weather.api.generated.model.CitySummary;
 import org.example.weather.api.generated.model.WeatherListResponse;
 import org.example.weather.api.generated.model.WeatherPageMetadata;
 import org.jooq.DSLContext;
-import org.jooq.Record2;
 import org.jooq.Record3;
 import org.jooq.Result;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +18,8 @@ import java.util.*;
 import static org.example.weather.api.Constants.PAGE_SIZE;
 import static org.example.weather.api.Constants.TOTAL_COUNT;
 import static org.example.weather.db.generated.Tables.*;
-import static org.jooq.impl.DSL.*;
+import static org.jooq.impl.DSL.avg;
+import static org.jooq.impl.DSL.count;
 
 @RestController
 public class WeatherController implements WeatherApi {
