@@ -28,6 +28,9 @@ class RegistrationListenerTest extends AbstractIntegrationTest {
     private RegistrationListener listener;
 
     @Autowired
+    private TemperatureListener temperatureListener;
+
+    @Autowired
     private DSLContext db;
 
     // --- Happy path: best-effort. Write when a city OR a valid coordinate pair
@@ -129,6 +132,34 @@ class RegistrationListenerTest extends AbstractIntegrationTest {
         assertThat(isPaired(cityId)).isTrue();
     }
 
+    @Test
+    void refreshesMatviewMatchingSeveralCitiesOnOverlap() {
+        // Two cities ~5.5 km apart; the station sits between them, inside 25 km of
+        // both, so it matches both -- overlap is intended (data-modelling iteration 3).
+        long cityA = seedCity("Overlapton", "Region-C", "54.000000", "-1.000000");
+        long cityB = seedCity("Overlingham", "Region-D", "54.050000", "-1.000000");
+
+        listener.onMessage(registrationXml(SERIAL, location(coordinates("54.025000", "-1.000000"))));
+
+        assertThat(isPaired(cityA)).isTrue();
+        assertThat(isPaired(cityB)).isTrue();
+    }
+
+    // --- Lifecycle: a station's measurements are dropped as "unknown station"
+    // until it registers, then accepted (iteration 3 skip-unknown-stations rule). ---
+    @Test
+    void acceptsMeasurementsOnlyAfterRegistration() {
+        // Measures before registering -- unknown station, nothing stored.
+        temperatureListener.onMessage(temperatureXml(SERIAL));
+        assertThat(db.fetchCount(SCALAR_MEASUREMENTS)).isZero();
+
+        listener.onMessage(registrationXml(SERIAL, location("<city>Testville</city>")));
+
+        // Same measurement after registering -- now accepted.
+        temperatureListener.onMessage(temperatureXml(SERIAL));
+        assertThat(db.fetchCount(SCALAR_MEASUREMENTS)).isEqualTo(1);
+    }
+
     // --- helpers ---
 
     private boolean isPaired(long cityId) {
@@ -160,6 +191,22 @@ class RegistrationListenerTest extends AbstractIntegrationTest {
 
     private static String location(String inner) {
         return "<location>" + inner + "</location>";
+    }
+
+    private static String temperatureXml(String serialNumber) {
+        return """
+                <station-measurements>
+                    <serialNumber>%s</serialNumber>
+                    <measurements>
+                        <measurement>
+                            <type>temperature</type>
+                            <value>21.3</value>
+                            <unit>°C</unit>
+                            <timestamp>1752134400</timestamp>
+                        </measurement>
+                    </measurements>
+                </station-measurements>
+                """.formatted(serialNumber);
     }
 
     private static String registrationXml(String serialNumber, String locationXml) {

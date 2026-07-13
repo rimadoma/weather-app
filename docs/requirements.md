@@ -1,3 +1,16 @@
+# Iteration 20 -- city matching trusts name and coordinates independently
+Records an accepted limitation of the `station_cities` matching (iterations 3
+and 19), not a change:
+- **The two match paths never cross-check each other.** A station matches a city
+  if its `city_name` equals the city's name OR its coordinates fall within 25 km
+  -- ORed, evaluated independently. A name match ignores the coordinates
+  entirely: a station naming "Ravensmere" is paired with it even if its
+  coordinates sit in Antarctica, and conversely a plausible-coordinates station
+  with a nonsense name still matches purely on distance.
+- **Accepted, not guarded.** Field data is trusted as-is; for this exercise a
+  name/coordinate contradiction isn't worth detecting. There is no validation
+  that a named station's coordinates are anywhere near the city it names.
+
 # Iteration 19 -- re-registration updates a station's location
 Makes explicit a lifecycle point iteration 3 left open: what a registration
 message for an *already-known* serial number does. It updates the station's

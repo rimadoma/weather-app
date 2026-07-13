@@ -80,8 +80,8 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 
 - [x] Generator: publish `station_registration` messages for new stations
       (instead of only direct-seeding them)
-- [ ] Materialiser: handle registration -- upsert station, refresh the matview
-- [ ] Verify the skip-unknown-stations rule against a station that measures
+- [x] Materialiser: handle registration -- upsert station, refresh the matview
+- [x] Verify the skip-unknown-stations rule against a station that measures
       before registering
 - **Checkpoint:** unit tests for registration parsing (city-only, coords-only,
   both); psql session on the matview: name match, 25 km geo match, overlap
