@@ -13,12 +13,14 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.Random;
 
+import org.example.weather.generator.utils.Helpers;
+
 import static org.example.weather.db.generated.Tables.CITIES;
 import static org.example.weather.db.generated.Tables.REGIONS;
-import static org.example.weather.generator.seeders.Constants.*;
+import static org.example.weather.generator.utils.Helpers.*;
 
 /**
- * Seeds one city per name in {@link Constants#CITY_NAMES}, each assigned a
+ * Seeds one city per name in {@link Helpers#CITY_NAMES}, each assigned a
  * region and coordinates. Runs after {@link RegionSeeder}, before
  * {@link StationSeeder}.
  */

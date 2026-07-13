@@ -14,3 +14,4 @@ weather:
     stations-exchange: stations
     temperature-routing-key: stations.temperature
     wind-routing-key: stations.wind
+    registration-routing-key: stations.registration

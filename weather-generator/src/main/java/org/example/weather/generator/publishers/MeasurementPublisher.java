@@ -73,7 +73,7 @@ public class MeasurementPublisher {
             boolean tempMissing = rng.nextBoolean();
             long nowEpoch = Instant.now().getEpochSecond();
 
-            // Small change that either wind or temp is missing, so that we can test partial data
+            // Small chance that either wind or temp is missing, so that we can test partial data
             if (!partialReadings || !tempMissing) {
                 Message message = generateTempMessage(serialNos[i], nowEpoch);
                 amqpTemplate.send(rabbitMqProperties.stationsExchange(), rabbitMqProperties.temperatureRoutingKey(), message);

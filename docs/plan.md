@@ -78,7 +78,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 
 ## Slice 3 -- station registration lifecycle
 
-- [ ] Generator: publish `station_registration` messages for new stations
+- [x] Generator: publish `station_registration` messages for new stations
       (instead of only direct-seeding them)
 - [ ] Materialiser: handle registration -- upsert station, refresh the matview
 - [ ] Verify the skip-unknown-stations rule against a station that measures

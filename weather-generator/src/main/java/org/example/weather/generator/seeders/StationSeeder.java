@@ -13,10 +13,12 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.Random;
 
+import org.example.weather.generator.utils.Helpers;
+
 import static org.example.weather.db.generated.Tables.CITIES;
 import static org.example.weather.db.generated.Tables.STATIONS;
-import static org.example.weather.generator.seeders.Constants.UK_LAT_RANGE;
-import static org.example.weather.generator.seeders.Constants.UK_LNG_RANGE;
+import static org.example.weather.generator.utils.Helpers.UK_LAT_RANGE;
+import static org.example.weather.generator.utils.Helpers.UK_LNG_RANGE;
 
 /**
  * Seeds a handful of stations per city, each with a generated serial number
@@ -29,8 +31,6 @@ public class StationSeeder implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(StationSeeder.class);
     // Doesn't guarantee that a city will get this many stations (random coords)
     private static final int STATIONS_GENERATED_PER_CITY = 5;
-    private static final String SERIAL_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static final int SERIAL_LENGTH = 11;
 
     private final DSLContext db;
     private final Random rng = new Random();
@@ -57,7 +57,7 @@ public class StationSeeder implements ApplicationRunner {
 
         for (String _ : cityNames) {
             for (int i = 0; i < STATIONS_GENERATED_PER_CITY; i++) {
-                String serialNo = randomSerialNo();
+                String serialNo = Helpers.randomSerialNo(rng);
 
                 boolean hasCityName = rng.nextBoolean();
                 String stationCityName = null;
@@ -77,13 +77,5 @@ public class StationSeeder implements ApplicationRunner {
 
         int inserted = insert.onConflictDoNothing().execute();
         log.info("Seeded stations: {} inserted", inserted);
-    }
-
-    private String randomSerialNo() {
-        StringBuilder serialNo = new StringBuilder(SERIAL_LENGTH);
-        for (int i = 0; i < SERIAL_LENGTH; i++) {
-            serialNo.append(SERIAL_CHARS.charAt(rng.nextInt(SERIAL_CHARS.length())));
-        }
-        return serialNo.toString();
     }
 }
