@@ -13,3 +13,4 @@ weather:
   rabbitmq:
     temperature-queue: stations.temperature.queue
     wind-queue: stations.wind.queue
+    registration-queue: stations.registration.queue

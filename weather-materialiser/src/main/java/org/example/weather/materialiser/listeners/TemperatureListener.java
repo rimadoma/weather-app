@@ -32,19 +32,19 @@ public class TemperatureListener {
 
     @RabbitListener(queues = "${weather.rabbitmq.temperature-queue}")
     public void onMessage(String xml) {
-        StationMeasurements message = Utils.parse(xml, log);
+        StationMeasurements message = Utils.parse(xml, StationMeasurements.class, log);
         if (message == null) {
+            return;
+        }
+
+        Optional<Long> stationId = Utils.queryStationId(db, message.serialNumber, log);
+        if (stationId.isEmpty()) {
             return;
         }
 
         List<StationMeasurements.Measurement> measurements = Utils.filterRelevantMeasures(message, Set.of("temperature"));
         if (measurements.isEmpty()) {
             log.error("Received no temperature measurements for station {}", message.serialNumber);
-            return;
-        }
-
-        Optional<Long> stationId = Utils.queryStationId(db, message.serialNumber, log);
-        if (stationId.isEmpty()) {
             return;
         }
 

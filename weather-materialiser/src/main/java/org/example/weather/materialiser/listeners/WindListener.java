@@ -31,19 +31,19 @@ public class WindListener {
 
     @RabbitListener(queues = "${weather.rabbitmq.wind-queue}")
     public void onMessage(String xml) {
-        StationMeasurements message = Utils.parse(xml, log);
+        StationMeasurements message = Utils.parse(xml, StationMeasurements.class, log);
         if (message == null) {
+            return;
+        }
+
+        Optional<Long> stationId = Utils.queryStationId(db, message.serialNumber, log);
+        if (stationId.isEmpty()) {
             return;
         }
 
         List<Measurement> measurements = Utils.filterRelevantMeasures(message, Set.of("wind_speed", "wind_direction"));
         if (measurements.isEmpty()) {
             log.error("Received no wind measurements for station {}", message.serialNumber);
-            return;
-        }
-
-        Optional<Long> stationId = Utils.queryStationId(db, message.serialNumber, log);
-        if (stationId.isEmpty()) {
             return;
         }
 

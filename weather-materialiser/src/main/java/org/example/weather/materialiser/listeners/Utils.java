@@ -26,9 +26,9 @@ final class Utils {
     private Utils() {
     }
 
-    static StationMeasurements parse(String xml, Logger log) {
+    static <T> T parse(String xml, Class<T> clazz, Logger log) {
         try {
-            return xmlMapper.readValue(xml, StationMeasurements.class);
+            return xmlMapper.readValue(xml, clazz);
         } catch (JacksonException e) {
             // Malformed message -- retrying won't fix it, so log and drop
             // rather than letting it propagate into a nack/requeue loop.

@@ -1,3 +1,27 @@
+# Iteration 19 -- re-registration updates a station's location
+Makes explicit a lifecycle point iteration 3 left open: what a registration
+message for an *already-known* serial number does. It updates the station's
+location rather than being ignored.
+- **Serial is identity, location is mutable.** A station is keyed by its serial
+  number (iteration 3). A second registration for that serial is the same
+  station telling us where it now is, so its location is overwritten in place --
+  no duplicate row, no rejecting the message.
+- **Replace wholesale, never merge.** All location columns (`city_name`, `lat`,
+  `lng`) are rewritten on every registration; whichever half doesn't validate is
+  written as NULL. A prior registration's city is *not* kept when a later,
+  coords-only message arrives (and vice versa). Rationale: the new message is the
+  station's current truth, and a stale half left over from an earlier
+  registration can't be trusted to still hold -- a half-merged location is worse
+  than a fully-replaced one.
+- **Still best-effort (iteration 16).** The same validation decides what is
+  written: a registration persists if it carries a valid city *or* a valid
+  coordinate pair; junk halves (blank city, unparseable/out-of-range/partial
+  coordinates) are dropped to NULL, not stored. A registration with neither valid
+  half is skipped entirely, leaving any existing row untouched.
+- **Matview refresh applies to updates too (iteration 3).** A location change can
+  change which cities a station matches, so `station_cities` is refreshed on
+  re-registration exactly as on first registration.
+
 # Iteration 18 -- wind direction mean is speed-weighted
 Supersedes iteration 2's equal-weight circular mean for wind direction (wind
 speed stays a plain mean; the both-or-neither pairing of iteration 17 is
