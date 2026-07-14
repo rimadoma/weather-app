@@ -89,7 +89,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 ## Slice 4 -- past week detail
 
 - [x] Generator: seed ~a week of historic measurements directly into the DB
-- [ ] API: `GET /api/weather/:id` -- fixed 6 h bucket grid (02/08/14/20 UTC),
+- [x] API: `GET /api/weather/:id` -- fixed 6 h bucket grid (02/08/14/20 UTC),
       25 buckets, nulls for empty buckets, current partial bucket last
 - [ ] Frontend: detail page with a simple line graph (temperature, wind speed,
       or both), not rendering past "now"
