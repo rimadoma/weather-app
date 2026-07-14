@@ -5,12 +5,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Random;
 
 /** Fixed seed data and helper functions shared by the generator classes. */
 public final class Helpers {
 
     public static final String[] CITY_NAMES = loadCityNames();
+
+    /** Warning descriptions, shared by the warning seeder and publisher. */
+    public static final List<String> WARNING_DESCRIPTIONS = List.of(
+            "Flooding", "High winds", "Fire risk", "Extreme heat", "Heavy snow",
+            "Ice", "Dense fog", "Thunderstorms", "Coastal overtopping",
+            "Hedgehog uprising"
+    );
 
     // Roughly the UK's bounding box; some resulting points end up in the sea.
     public static final double[] UK_LAT_RANGE = {49.960000, 58.635000};

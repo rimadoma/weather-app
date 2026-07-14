@@ -27,6 +27,15 @@
       "auto_delete": false,
       "internal": false,
       "arguments": {}
+    },
+    {
+      "name": "metoffice",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
     }
   ],
   "queues": [
@@ -46,6 +55,13 @@
     },
     {
       "name": "stations.registration.queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "weather.warnings.queue",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
@@ -75,6 +91,14 @@
       "destination": "stations.registration.queue",
       "destination_type": "queue",
       "routing_key": "stations.registration",
+      "arguments": {}
+    },
+    {
+      "source": "metoffice",
+      "vhost": "/",
+      "destination": "weather.warnings.queue",
+      "destination_type": "queue",
+      "routing_key": "weather.warnings",
       "arguments": {}
     }
   ]

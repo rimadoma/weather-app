@@ -15,3 +15,5 @@ weather:
     temperature-routing-key: stations.temperature
     wind-routing-key: stations.wind
     registration-routing-key: stations.registration
+    metoffice-exchange: metoffice
+    warning-routing-key: weather.warnings
