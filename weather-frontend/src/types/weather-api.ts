@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/weather/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Past-week weather for one city as a fixed 6-hour bucket grid. */
+        get: operations["getWeatherHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -28,6 +45,43 @@ export interface components {
         WeatherListResponse: {
             metadata: components["schemas"]["WeatherPageMetadata"];
             cities: components["schemas"]["CitySummary"][];
+        };
+        WeatherHistoryResponse: {
+            /**
+             * Format: int64
+             * @example 42
+             */
+            id: number;
+            /** @example Berryham-upon-Wicket */
+            name: string;
+            /** @description Warnings active at query time. Always empty until weather warnings land. */
+            warnings: components["schemas"]["Warning"][];
+            /** @description Fixed 6-hour bucket grid (boundaries 02:00/08:00/14:00/20:00 UTC), oldest first: 24 complete buckets plus the current partial one. Empty buckets carry null readings rather than being omitted. */
+            buckets: components["schemas"]["WeatherBucket"][];
+        };
+        WeatherBucket: {
+            /**
+             * Format: date-time
+             * @description Inclusive start of the 6-hour bucket, ISO-8601 UTC.
+             */
+            startTime: string;
+            /**
+             * Format: double
+             * @description Mean temperature in °C over the bucket, null if no readings.
+             * @example 22.1
+             */
+            temperature?: number | null;
+            /**
+             * Format: double
+             * @description Mean wind speed in m/s over the bucket, null if no readings.
+             * @example 3.2
+             */
+            windSpeed?: number | null;
+            /**
+             * @description Speed-weighted mean wind direction in whole degrees over the bucket, null if no readings. Always paired with windSpeed: both null or both present.
+             * @example 187
+             */
+            windDirection?: number | null;
         };
         WeatherPageMetadata: {
             /** @example 1 */
@@ -53,10 +107,14 @@ export interface components {
             temperature?: number | null;
             /**
              * Format: double
-             * @description Not populated yet -- always null until wind measurements land.
+             * @description Mean wind speed in m/s over the past hour, null if no readings.
+             * @example 1.4
              */
             windSpeed?: number | null;
-            /** @description Not populated yet -- always null until wind measurements land. */
+            /**
+             * @description Speed-weighted mean wind direction in whole degrees (meteorological convention: blowing from, 0 = north) over the past hour, null if no readings. Always paired with windSpeed: both null or both present.
+             * @example 40
+             */
             windDirection?: number | null;
             /** @description Warnings active at query time. Always empty until weather warnings land. */
             warnings: components["schemas"]["Warning"][];
@@ -99,6 +157,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["WeatherListResponse"];
                 };
+            };
+        };
+    };
+    getWeatherHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The city's past-week weather in 6-hour buckets. An existing city with no measurements still returns 200 with the full bucket grid, each bucket carrying null readings (cf. the list endpoint's null readings). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeatherHistoryResponse"];
+                };
+            };
+            /** @description No city with the given id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

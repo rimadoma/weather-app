@@ -94,7 +94,7 @@ return match?.directionName ?? "N/A";
       </thead>
       <tbody>
         <tr v-for="summary in citySummaries" :key="summary.id">
-          <td>{{ summary.name }}</td>
+          <td><RouterLink :to="{name: 'city-detail', params: { id: summary.id }}">{{ summary.name }}</RouterLink></td>
           <td>{{ mapMeasurement(summary.temperature, "°C") }}</td>
           <td>{{ mapMeasurement(summary.windSpeed, "m/s") }}</td>
           <td>{{ mapConventionalWindDirection(summary.windDirection) }}</td>
@@ -104,13 +104,3 @@ return match?.directionName ?? "N/A";
     <h2 v-else>No current weather data</h2>
   </section>
 </template>
-
-<style scoped>
-table {
-  margin: 0 auto;
-}
-
-.active {
-  font-weight: bold;
-}
-</style>
