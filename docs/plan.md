@@ -99,9 +99,9 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 
 ## Slice 5 -- weather warnings
 
-- [ ] Migration: `weather_warnings`
-- [ ] Generator: occasionally publish `weather_warning` messages (windows
-      starting a day or two in the future)
+- [x] Migration: `weather_warnings`
+- [ ] Generator: seed some warnings active now . Occasionally publish `weather_warning`
+      messages (windows starting in the near future)
 - [ ] Materialiser: consume and insert
 - [ ] API: attach active-at-query-time warnings per city in both endpoints
 - [ ] Frontend: display warnings on both pages

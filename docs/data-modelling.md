@@ -1,3 +1,12 @@
+# Iteration 8 -- weather_warnings written (V7)
+Two decisions made while writing migration V7, backported here:
+- `severity` is `VARCHAR(20) + CHECK (severity IN ('yellow', 'orange', 'red'))`,
+  not the ENUM of iteration 1 -- same reasoning as iteration 6: a future
+  severity is then a plain, fully transactional `ALTER ... DROP/ADD CONSTRAINT`
+  under Flyway, not an `ALTER TYPE ... ADD VALUE`.
+- Added `CHECK (end_time > start_time)` -- a warning window must be non-empty,
+  in line with the other constraint hardening (speed, direction, coordinates).
+
 # Iteration 7 -- wind_measurements.speed gains a non-negative CHECK
 Added `CHECK (speed >= 0)` -- forgot it in iteration 2, and it's in line with
 the direction and coordinate checks.
