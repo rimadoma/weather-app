@@ -30,8 +30,6 @@ function mapMeasurement(value: number | null | undefined, unit: string | null = 
   return unit ? roundedValue + " " + unit : roundedValue
 }
 
-// TODO (Slice 4 frontend): the detail page will need this same degrees->compass
-// mapping, so lift it out of this view into a shared util rather than duplicating.
 function mapConventionalWindDirection(degrees: number | null | undefined): string {
   // == null, not !degrees: 0 is due north, a valid direction, not missing data.
   if (degrees == null) {

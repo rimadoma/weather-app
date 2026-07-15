@@ -54,7 +54,7 @@ an API, package, or artifact works from memory or a single doc lookup:
 - Treat Context7/doc snippets as a starting point, not confirmation — they
   can still lag or cite a different version than the one pinned here.
 
-## Planned module layout (iteration 6)
+## Module layout (iteration 6)
 
 Maven multi-module: `weather-db` (Flyway migrations, jOOQ codegen, thin query
 toolbox), `weather-materialiser` (RabbitMQ → DB ingest), `weather-api`

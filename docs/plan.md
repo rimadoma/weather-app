@@ -123,6 +123,11 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
   stale and throws an unhandled rejection. Wrap the fetches and render a
   friendly "couldn't load weather" message via one shared component on both
   pages.
+- CI: a single GitHub Actions workflow running `mvn verify` (Testcontainers
+  already covers the DB-touching tests, so the workflow needs no service
+  containers of its own) plus the frontend's `vue-tsc` type-check. Everything
+  currently runs only from the IDE/local Maven; one pipeline would catch a
+  broken build or a spec/type drift on push.
 - Deploy to Docker Desktop Kubernetes with `skaffold dev`
 - `REFRESH ... CONCURRENTLY` upgrade for the matview
 - Common backend lib for DB / RabbitMQ / Schemas etc

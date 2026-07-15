@@ -1,3 +1,14 @@
+# Iteration 23 -- warning active window is end-exclusive
+Backports a decision made while implementing Slice 5, so far recorded only in
+plan.md: a warning is active while `start_time <= now < end_time`. Iterations
+1 and 5 wrote the window as inclusive at both ends (`start_time <= now <=
+end_time`); what was actually built -- both API controllers filter on
+`START_TIME <= now AND END_TIME > now` -- is end-exclusive.
+- **Why half-open.** "Active until 12:00" means gone at 12:00, not shown for
+  one more instant. It also gives back-to-back warnings (one ending exactly
+  when the next starts) a single owner for the boundary moment instead of both
+  applying at once.
+
 # Iteration 22 -- aggregation maths in SQL, output formatting in the API
 Splits responsibility for derived read values (starting with wind direction):
 - **weather-db does the set-based maths in SQL.** The toolbox exposes the raw
