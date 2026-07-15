@@ -1,6 +1,7 @@
 package org.example.weather.api;
 
 import org.example.weather.api.generated.api.WeatherHistoryApi;
+import org.example.weather.api.generated.model.Warning;
 import org.example.weather.api.generated.model.WeatherBucket;
 import org.example.weather.api.generated.model.WeatherHistoryResponse;
 import org.example.weather.db.toolbox.WindAggregates;
@@ -51,10 +52,12 @@ public class WeatherHistoryController implements WeatherHistoryApi {
             return ResponseEntity.notFound().build();
         }
 
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+
         // Fixed 6h bucket grid (Helpers.bucketStarts). Its first entry -- the window
         // start, an aligned boundary -- doubles as the date_bin origin and the query's
         // lower bound; the grid itself drives the response so the shape is fixed.
-        List<OffsetDateTime> bucketStarts = Helpers.bucketStarts(OffsetDateTime.now(ZoneOffset.UTC));
+        List<OffsetDateTime> bucketStarts = Helpers.bucketStarts(now);
         OffsetDateTime startTime = bucketStarts.getFirst();
         Field<OffsetDateTime> dbBucket = generateBucketExpression(SCALAR_MEASUREMENTS.MEASURED_AT, startTime);
         Field<OffsetDateTime> dbBucket2 = generateBucketExpression(WIND_MEASUREMENTS.MEASURED_AT, startTime);
@@ -114,6 +117,25 @@ public class WeatherHistoryController implements WeatherHistoryApi {
             buckets.add(bucket);
         }
         WeatherHistoryResponse response = new WeatherHistoryResponse(id, cityName.get(), new ArrayList<>(), buckets);
+
+        // Attach active weather warnings to response
+        List<Warning> activeWarnings = new ArrayList<>();
+        db.select(WEATHER_WARNINGS.SEVERITY,
+                        WEATHER_WARNINGS.DESCRIPTION,
+                        WEATHER_WARNINGS.START_TIME,
+                        WEATHER_WARNINGS.END_TIME)
+                .from(WEATHER_WARNINGS)
+                .join(CITIES).on(CITIES.REGION_ID.eq(WEATHER_WARNINGS.REGION_ID))
+                .where(
+                        CITIES.ID.eq(id),
+                        WEATHER_WARNINGS.START_TIME.le(now),
+                        WEATHER_WARNINGS.END_TIME.gt(now))
+                .fetch()
+                .forEach(r -> {
+                    Warning warning = new Warning(r.value2(), r.value1(), r.value3(), r.value4());
+                    activeWarnings.add(warning);
+                });
+        response.setWarnings(activeWarnings);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }

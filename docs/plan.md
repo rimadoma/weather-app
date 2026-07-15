@@ -106,7 +106,8 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 - [x] Materialiser: consume and insert (lenient parse, normalise severity,
       validate the window in code so the chk_window CHECK never throws, skip
       unknown regions)
-- [ ] API: attach active-at-query-time warnings per city in both endpoints
+- [x] API: attach active-at-query-time warnings per city in both endpoints
+      (list + detail; active window is start <= now < end, end exclusive)
 - [ ] Frontend: display warnings on both pages
 - **Checkpoint:** unit tests for the active-window check (future warning is
   stored but not shown); insert a warning by hand in psql and see it appear

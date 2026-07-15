@@ -4,6 +4,8 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -15,14 +17,17 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 import static org.example.weather.db.generated.Tables.CITIES;
 import static org.example.weather.db.generated.Tables.REGIONS;
 import static org.example.weather.db.generated.Tables.SCALAR_MEASUREMENTS;
 import static org.example.weather.db.generated.Tables.STATIONS;
 import static org.example.weather.db.generated.Tables.STATION_CITIES;
+import static org.example.weather.db.generated.Tables.WEATHER_WARNINGS;
 import static org.example.weather.db.generated.Tables.WIND_MEASUREMENTS;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -73,6 +78,8 @@ class WeatherControllerTest extends AbstractIntegrationTest {
         insertWindMeasurement(stationId, BigDecimal.valueOf(2.0), (short) 90, now.minusMinutes(30));
         insertWindMeasurement(stationId, BigDecimal.valueOf(4.0), (short) 90, now.minusMinutes(10));
 
+        insertWarning("orange", "Flooding", now.minusHours(1), now.plusHours(1));
+
         mockMvc.perform(get("/api/weather").param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.metadata.page").value(1))
@@ -82,7 +89,9 @@ class WeatherControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.cities[0].temperature").value(21.0))
                 .andExpect(jsonPath("$.cities[0].windSpeed").value(3.0))
                 .andExpect(jsonPath("$.cities[0].windDirection").value(90))
-                .andExpect(jsonPath("$.cities[0].warnings").isEmpty());
+                .andExpect(jsonPath("$.cities[0].warnings", hasSize(1)))
+                .andExpect(jsonPath("$.cities[0].warnings[0].severity").value("orange"))
+                .andExpect(jsonPath("$.cities[0].warnings[0].description").value("Flooding"));
     }
 
     @Test
@@ -197,6 +206,70 @@ class WeatherControllerTest extends AbstractIntegrationTest {
 
         mockMvc.perform(get("/api/weather").param("page", "1"))
                 .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void warningsDefaultToEmptyListWhenCityHasNone() throws Exception {
+        insertCity("Ambridge");
+        refreshStationCities();
+
+        // Explicitly an empty array, never null -- isArray() fails on null.
+        mockMvc.perform(get("/api/weather").param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cities[0].warnings").isArray())
+                .andExpect(jsonPath("$.cities[0].warnings", hasSize(0)));
+    }
+
+    @Test
+    void returnsAllActiveWarningsForCityAndOmitsExpired() throws Exception {
+        insertCity("Ambridge");
+        refreshStationCities();
+
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        insertWarning("yellow", "High winds", now.minusHours(2), now.plusHours(2));
+        insertWarning("red", "Flooding", now.minusHours(1), now.plusHours(6));
+        insertWarning("orange", "Ice", now.minusHours(5), now.minusHours(1)); // expired
+
+        mockMvc.perform(get("/api/weather").param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cities[0].warnings", hasSize(2)));
+    }
+
+    // The controller computes its own `now`, always >= the `now` seeded here
+    // (time only moves forward). That keeps the two boundary cases deterministic:
+    // a start == seed-now is always <= the controller's now (returned), and an
+    // end == seed-now is never > the controller's now (excluded -- end exclusive).
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("warningWindows")
+    void filtersWarningsByActiveWindow(String label, long startOffsetSeconds, long endOffsetSeconds, boolean active)
+            throws Exception {
+        insertCity("Ambridge");
+        refreshStationCities();
+
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        insertWarning("yellow", "High winds",
+                now.plusSeconds(startOffsetSeconds), now.plusSeconds(endOffsetSeconds));
+
+        mockMvc.perform(get("/api/weather").param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cities[0].warnings", hasSize(active ? 1 : 0)));
+    }
+
+    private static Stream<Arguments> warningWindows() {
+        return Stream.of(
+                Arguments.of("active: started in the past, ends in the future", -3600L, 3600L, true),
+                Arguments.of("active: starts now, ends in the future", 0L, 3600L, true),
+                Arguments.of("inactive: starts in the future", 3600L, 7200L, false),
+                Arguments.of("expired: ended in the past", -7200L, -3600L, false),
+                Arguments.of("boundary: ends now, end is exclusive", -3600L, 0L, false)
+        );
+    }
+
+    private void insertWarning(String severity, String description, OffsetDateTime start, OffsetDateTime end) {
+        db.insertInto(WEATHER_WARNINGS, WEATHER_WARNINGS.REGION_ID, WEATHER_WARNINGS.SEVERITY,
+                        WEATHER_WARNINGS.DESCRIPTION, WEATHER_WARNINGS.START_TIME, WEATHER_WARNINGS.END_TIME)
+                .values(regionId, severity, description, start, end)
+                .execute();
     }
 
     private Long insertCity(String name) {

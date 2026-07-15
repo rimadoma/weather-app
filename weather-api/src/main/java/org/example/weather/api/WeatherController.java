@@ -2,6 +2,7 @@ package org.example.weather.api;
 
 import org.example.weather.api.generated.api.WeatherApi;
 import org.example.weather.api.generated.model.CitySummary;
+import org.example.weather.api.generated.model.Warning;
 import org.example.weather.api.generated.model.WeatherListResponse;
 import org.example.weather.api.generated.model.WeatherPageMetadata;
 import org.example.weather.db.toolbox.WindAggregates;
@@ -33,7 +34,8 @@ public class WeatherController implements WeatherApi {
 
     @Override
     public ResponseEntity<WeatherListResponse> getCurrentWeather(Integer page) {
-        OffsetDateTime startTime = OffsetDateTime.now(ZoneOffset.UTC).minusHours(1);
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime startTime = now.minusHours(1);
 
         // Query cities for this page, plus the total city count via a window function
         int offset = (page - 1) * PAGE_SIZE;
@@ -95,6 +97,23 @@ public class WeatherController implements WeatherApi {
                             Helpers.bearingFromComponents(record.value3().doubleValue(), record.value4().doubleValue()));
                 });
 
+        Map<Long, List<Warning>> cityWarnings = new HashMap<>();
+        db.select(CITIES.ID,
+                        WEATHER_WARNINGS.SEVERITY,
+                        WEATHER_WARNINGS.DESCRIPTION,
+                        WEATHER_WARNINGS.START_TIME,
+                        WEATHER_WARNINGS.END_TIME)
+                .from(WEATHER_WARNINGS)
+                .join(CITIES).on(CITIES.REGION_ID.eq(WEATHER_WARNINGS.REGION_ID))
+                .where(
+                        WEATHER_WARNINGS.START_TIME.le(now),
+                        WEATHER_WARNINGS.END_TIME.gt(now))
+                .fetch()
+                .forEach(r -> {
+                    Warning warning = new Warning(r.value3(), r.value2(), r.value4(), r.value5());
+                    cityWarnings.computeIfAbsent(r.value1(), _ -> new ArrayList<>()).add(warning);
+                });
+
         // Build response
         List<CitySummary> summaries = cities.entrySet().stream()
                 .map(entry -> {
@@ -110,6 +129,8 @@ public class WeatherController implements WeatherApi {
                         summary.setWindSpeed(speed);
                         summary.setWindDirection(Integer.valueOf(direction));
                     }
+
+                    summary.setWarnings(cityWarnings.getOrDefault(cityId, Collections.emptyList()));
 
                     return summary;
                 })

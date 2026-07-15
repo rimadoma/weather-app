@@ -3,29 +3,28 @@ package org.example.weather.api;
 import org.example.weather.api.generated.model.WeatherBucket;
 import org.example.weather.api.generated.model.WeatherHistoryResponse;
 import org.jooq.DSLContext;
-import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.example.weather.db.generated.Tables.CITIES;
-import static org.example.weather.db.generated.Tables.REGIONS;
-import static org.example.weather.db.generated.Tables.SCALAR_MEASUREMENTS;
-import static org.example.weather.db.generated.Tables.STATIONS;
-import static org.example.weather.db.generated.Tables.STATION_CITIES;
-import static org.example.weather.db.generated.Tables.WIND_MEASUREMENTS;
+import static org.example.weather.db.generated.Tables.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -67,11 +66,16 @@ class WeatherHistoryControllerTest extends AbstractIntegrationTest {
         insertTemperatureMeasurement(stationId, BigDecimal.valueOf(18.0), measuredAt);
         insertWindMeasurement(stationId, BigDecimal.valueOf(3.0), (short) 90, measuredAt);
 
+        // An active warning for the city's region is attached to the response.
+        insertWarning("orange", "Flooding", now.minusHours(1), now.plusHours(1));
+
         WeatherHistoryResponse body = getHistory(cityId);
 
         assertThat(body.getId()).isEqualTo(cityId);
         assertThat(body.getName()).isEqualTo("Ambridge");
-        assertThat(body.getWarnings()).isEmpty();
+        assertThat(body.getWarnings()).hasSize(1);
+        assertThat(body.getWarnings().getFirst().getSeverity()).isEqualTo("orange");
+        assertThat(body.getWarnings().getFirst().getDescription()).isEqualTo("Flooding");
 
         List<WeatherBucket> buckets = body.getBuckets();
         assertGridShape(buckets);
@@ -242,7 +246,64 @@ class WeatherHistoryControllerTest extends AbstractIntegrationTest {
         assertThat(bucketContaining(buckets, boundary.minusSeconds(1)).getTemperature()).isNull();
     }
 
+    @Test
+    void warningsDefaultToEmptyListWhenCityHasNone() throws Exception {
+        Long cityId = insertCity("Ambridge");
+        refreshStationCities();
+
+        // Present and empty, never null.
+        assertThat(getHistory(cityId).getWarnings()).isNotNull().isEmpty();
+    }
+
+    @Test
+    void returnsAllActiveWarningsForCityAndOmitsExpired() throws Exception {
+        Long cityId = insertCity("Ambridge");
+        refreshStationCities();
+
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        insertWarning("yellow", "High winds", now.minusHours(2), now.plusHours(2));
+        insertWarning("red", "Flooding", now.minusHours(1), now.plusHours(6));
+        insertWarning("orange", "Ice", now.minusHours(5), now.minusHours(1)); // expired
+
+        assertThat(getHistory(cityId).getWarnings()).hasSize(2);
+    }
+
+    // The controller computes its own `now`, always >= the `now` seeded here
+    // (time only moves forward). That keeps the two boundary cases deterministic:
+    // a start == seed-now is always <= the controller's now (returned), and an
+    // end == seed-now is never > the controller's now (excluded -- end exclusive).
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("warningWindows")
+    void filtersWarningsByActiveWindow(String label, long startOffsetSeconds, long endOffsetSeconds, boolean active)
+            throws Exception {
+        Long cityId = insertCity("Ambridge");
+        refreshStationCities();
+
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        insertWarning("yellow", "High winds",
+                now.plusSeconds(startOffsetSeconds), now.plusSeconds(endOffsetSeconds));
+
+        assertThat(getHistory(cityId).getWarnings()).hasSize(active ? 1 : 0);
+    }
+
+    private static Stream<Arguments> warningWindows() {
+        return Stream.of(
+                Arguments.of("active: started in the past, ends in the future", -3600L, 3600L, true),
+                Arguments.of("active: starts now, ends in the future", 0L, 3600L, true),
+                Arguments.of("inactive: starts in the future", 3600L, 7200L, false),
+                Arguments.of("expired: ended in the past", -7200L, -3600L, false),
+                Arguments.of("boundary: ends now, end is exclusive", -3600L, 0L, false)
+        );
+    }
+
     // --- helpers ---
+
+    private void insertWarning(String severity, String description, OffsetDateTime start, OffsetDateTime end) {
+        db.insertInto(WEATHER_WARNINGS, WEATHER_WARNINGS.REGION_ID, WEATHER_WARNINGS.SEVERITY,
+                        WEATHER_WARNINGS.DESCRIPTION, WEATHER_WARNINGS.START_TIME, WEATHER_WARNINGS.END_TIME)
+                .values(regionId, severity, description, start, end)
+                .execute();
+    }
 
     private WeatherHistoryResponse getHistory(long cityId) throws Exception {
         MvcResult result = mockMvc.perform(get("/api/weather/{id}", cityId))
@@ -251,7 +312,9 @@ class WeatherHistoryControllerTest extends AbstractIntegrationTest {
         return objectMapper.readValue(result.getResponse().getContentAsByteArray(), WeatherHistoryResponse.class);
     }
 
-    /** Grid shape invariant of the wall-clock: 25 buckets aligned to 02/08/14/20 UTC, 6 h apart, spanning 6 days, ending at the current partial bucket. */
+    /**
+     * Grid shape invariant of the wall-clock: 25 buckets aligned to 02/08/14/20 UTC, 6 h apart, spanning 6 days, ending at the current partial bucket.
+     */
     private void assertGridShape(List<WeatherBucket> buckets) {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         assertThat(buckets).hasSize(25);
