@@ -105,6 +105,42 @@ table {
   font-weight: bold;
 }
 
+.warning-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 2px;
+  line-height: 1;
+  cursor: default;
+}
+
+/* City detail page: active-warning boxes above the graph. Full container width,
+   so they line up with the graph (which is also width: 100%). */
+.warning-boxes {
+  margin: 0 0 12px;
+}
+
+.warning-box {
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  text-align: left;
+  color: #111;
+}
+
+.warning-box.red {
+  background: #d32f2f;
+}
+
+.warning-box.orange {
+  background: #e8730c;
+}
+
+.warning-box.yellow {
+  background: #e0b000;
+}
+
 /* City detail page: the past-week SVG graph */
 .graph {
   width: 100%;

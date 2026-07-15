@@ -118,12 +118,37 @@ const dayGroups = computed(() => {
   }
   return groups
 })
+
+// Active-warning boxes shown above the chart: one per severity that has at
+// least one active warning, listing that severity's distinct descriptions.
+// The API already filters to active warnings. This is intentionally fuller
+// than the list page's compact icons, so it isn't shared with WeatherListView.
+const SEVERITY_ORDER = ['red', 'orange', 'yellow'] as const
+
+const warningBoxes = computed(() => {
+  const warnings = history.value?.warnings ?? []
+  return SEVERITY_ORDER.flatMap((severity) => {
+    const descriptions = [...new Set(
+      warnings.filter((w) => w.severity === severity).map((w) => w.description),
+    )]
+    if (descriptions.length === 0) return []
+    const label = severity.charAt(0).toUpperCase() + severity.slice(1)
+    return [{ severity, label, descriptions }]
+  })
+})
 </script>
 
 <template>
   <section>
     <RouterLink to="/">&larr; Back to all cities</RouterLink>
     <h1>Weather of the past week at {{ history?.name }}</h1>
+
+    <div v-if="warningBoxes.length" class="warning-boxes">
+      <div v-for="box in warningBoxes" :key="box.severity"
+           class="warning-box" :class="box.severity">
+        {{ box.label }} warnings: {{ box.descriptions.join(', ') }}
+      </div>
+    </div>
 
     <svg v-if="history" :viewBox="`0 0 ${WIDTH} ${HEIGHT}`" class="graph" role="img"
          :aria-label="`Past weather at ${history.name}`">

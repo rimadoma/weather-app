@@ -5,7 +5,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import apiClient from '../api/client'
-import { type CitySummary, type WeatherListResponse } from '../types/weather'
+import { type CitySummary, type WeatherListResponse, type Warning } from '../types/weather'
 
 const route = useRoute()
 const activePage = computed(() => Number(route.query.page) || 1)
@@ -71,6 +71,47 @@ function mapConventionalWindDirection(degrees: number | null | undefined): strin
 
 return match?.directionName ?? "N/A";
 }
+
+// Warning icons: one generic warning sign per distinct type (description),
+// coloured by severity. The API already returns only active warnings, so we
+// just collapse duplicates of the same type into a single icon, keeping the
+// highest severity; the type itself is revealed in the hover tooltip.
+const SEVERITY_RANK: Record<string, number> = { yellow: 1, orange: 2, red: 3 }
+const SEVERITY_COLOUR: Record<string, string> = {
+  yellow: '#e0b000',
+  orange: '#e8730c',
+  red: '#d32f2f',
+}
+
+// Easter egg: a hedgehog uprising shows 1-3 hedgehogs by severity, not a triangle.
+const HEDGEHOG_UPRISING = 'Hedgehog uprising'
+
+interface WarningIcon {
+  description: string
+  colour: string
+  tooltip: string
+  hedgehogs: number
+}
+
+function summariseWarnings(warnings: Warning[]): WarningIcon[] {
+  // Keep the highest-severity warning per type.
+  const byType = new Map<string, Warning>()
+  warnings.forEach((w) => {
+    const seen = byType.get(w.description)
+    if (!seen || (SEVERITY_RANK[w.severity] ?? 0) > (SEVERITY_RANK[seen.severity] ?? 0)) {
+      byType.set(w.description, w)
+    }
+  })
+
+  return Array.from(byType.values())
+    .sort((a, b) => (SEVERITY_RANK[b.severity] ?? 0) - (SEVERITY_RANK[a.severity] ?? 0))
+    .map((w) => ({
+      description: w.description,
+      colour: SEVERITY_COLOUR[w.severity] ?? '#999',
+      tooltip: w.description,
+      hedgehogs: w.description === HEDGEHOG_UPRISING ? (SEVERITY_RANK[w.severity] ?? 0) : 0,
+    }))
+}
 </script>
 
 <template>
@@ -90,6 +131,7 @@ return match?.directionName ?? "N/A";
           <th>Temperature</th>
           <th>Wind speed</th>
           <th>Wind direction</th>
+          <th>Warnings</th>
         </tr>
       </thead>
       <tbody>
@@ -98,6 +140,21 @@ return match?.directionName ?? "N/A";
           <td>{{ mapMeasurement(summary.temperature, "°C") }}</td>
           <td>{{ mapMeasurement(summary.windSpeed, "m/s") }}</td>
           <td>{{ mapConventionalWindDirection(summary.windDirection) }}</td>
+          <td class="warnings">
+            <span
+              v-for="icon in summariseWarnings(summary.warnings)"
+              :key="icon.description"
+              class="warning-icon"
+              :style="{ color: icon.colour }"
+              :title="icon.tooltip"
+            >
+              <template v-if="icon.hedgehogs > 0">{{ '🦔'.repeat(icon.hedgehogs) }}</template>
+              <svg v-else viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path fill="currentColor" d="M1 21h22L12 2 1 21z" />
+                <path fill="#000" d="M11 9h2v6h-2zM11 17h2v2h-2z" />
+              </svg>
+            </span>
+          </td>
         </tr>
       </tbody>
     </table>

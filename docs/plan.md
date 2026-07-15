@@ -108,31 +108,21 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
       unknown regions)
 - [x] API: attach active-at-query-time warnings per city in both endpoints
       (list + detail; active window is start <= now < end, end exclusive)
-- [ ] Frontend: display warnings on both pages
+- [x] Frontend: display warnings on both pages (list: severity-coloured
+      warning-sign icons, one per type, + hedgehog-uprising easter egg;
+      detail: one per-severity box above the chart listing its descriptions)
 - **Checkpoint:** unit tests for the active-window check (future warning is
   stored but not shown); insert a warning by hand in psql and see it appear
 
-## Slice 6 -- crossing the Ts, dotting the Is
+## Future work?
 
-A catch-all polish pass once the feature slices land: cross-cutting cleanup and
-niceties that don't belong to any single feature. Grow this list as rough edges
-surface during the earlier slices.
-
-- [ ] Frontend: a reusable error-blurb component for failed fetches. The list
-      (and detail) views currently `await` the API with no try/catch, so a 500
-      -- which the read side deliberately lets bubble (the error-handling block
-      above requirements iteration 11) -- or a network blip leaves the view
-      stale and throws an unhandled rejection. Wrap the fetches and render a
-      friendly "couldn't load weather" message via one shared component on both
-      pages.
-- **Checkpoint:** point the frontend at a stopped (or 500-ing) API and confirm
-  the error blurb renders instead of a blank/half-broken page.
-
-## Parked (later milestone, not core design)
-
+- Frontend: a reusable error-blurb component for failed fetches. The list
+  (and detail) views currently `await` the API with no try/catch, so a 500
+  -- which the read side deliberately lets bubble (the error-handling block
+  above requirements iteration 11) -- or a network blip leaves the view
+  stale and throws an unhandled rejection. Wrap the fetches and render a
+  friendly "couldn't load weather" message via one shared component on both
+  pages.
 - Deploy to Docker Desktop Kubernetes with `skaffold dev`
 - `REFRESH ... CONCURRENTLY` upgrade for the matview
-- Refactor RabbitMQ listeners and publishers into a shared lib module --
-  the message schemas (`StationMeasurements`/`Measurement`) are duplicated
-  between weather-generator and weather-materialiser for now and need to
-  migrate into that shared module too, not just the listener/publisher code
+- Common backend lib for DB / RabbitMQ / Schemas etc
