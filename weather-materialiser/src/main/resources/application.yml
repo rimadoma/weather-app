@@ -14,3 +14,4 @@ weather:
     temperature-queue: stations.temperature.queue
     wind-queue: stations.wind.queue
     registration-queue: stations.registration.queue
+    warning-queue: weather.warnings.queue

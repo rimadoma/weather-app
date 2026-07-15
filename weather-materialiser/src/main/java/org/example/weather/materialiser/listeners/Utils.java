@@ -23,8 +23,7 @@ final class Utils {
 
     private static final XmlMapper xmlMapper = new XmlMapper();
 
-    private Utils() {
-    }
+    private Utils() {}
 
     static <T> T parse(String xml, Class<T> clazz, Logger log) {
         try {
@@ -33,7 +32,7 @@ final class Utils {
             // Malformed message -- retrying won't fix it, so log and drop
             // rather than letting it propagate into a nack/requeue loop.
             // No parsed object to identify it by yet, so log the raw XML.
-            log.error("Failed to parse station_measurements XML: {}", xml, e);
+            log.error("Failed to parse message XML: {}", xml, e);
             return null;
         }
     }
@@ -49,7 +48,7 @@ final class Utils {
                 .where(STATIONS.SERIAL_NO.eq(serialNumber))
                 .fetchOptional(STATIONS.ID);
         if (stationId.isEmpty()) {
-            log.warn("Skipping measurements for unknown station {}", serialNumber);
+            log.warn("Received data for an unknown station {}", serialNumber);
         }
         return stationId;
     }
