@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    # jOOQ codegen runs at generate-sources against a live, migrated schema
+    # (see weather-db/pom.xml), so the build itself needs this database --
+    # it is not just for tests. Testcontainers spins up its own containers
+    # for the integration tests, independently of this service.
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: weather
+          POSTGRES_USER: weather
+          POSTGRES_PASSWORD: weather
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U weather -d weather"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Migrate schema (prerequisite for jOOQ codegen)
+        run: mvn -B -pl weather-db flyway:migrate
+      - name: Build and test
+        run: mvn -B verify
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: weather-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: weather-frontend/package-lock.json
+      - run: npm ci
+      - name: Check committed API types match the OpenAPI spec
+        run: |
+          npm run gen:api
+          git diff --exit-code src/types/weather-api.ts
+      - name: Type-check
+        run: npm run type-check
