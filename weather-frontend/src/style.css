@@ -141,6 +141,21 @@ table {
   background: #e0b000;
 }
 
+/* Shared error blurb (ErrorBlurb.vue): section-wide banner for failed fetches */
+.error-blurb {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: #fdecea;
+  color: #111;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* City detail page: the past-week SVG graph */
 .graph {
   width: 100%;

@@ -1,16 +1,25 @@
 <script setup lang="ts">
 // Detail page: one city's past week (GET /api/weather/:id), with a simple line graph.
 import { onMounted, ref, computed } from 'vue';
+import { isAxiosError } from 'axios'
 import apiClient from '../api/client'
+import ErrorBlurb from '../components/ErrorBlurb.vue'
 import { type WeatherHistoryResponse } from '../types/weather'
 
 const props = defineProps<{ id: string }>()
 
 const history = ref<WeatherHistoryResponse | null>(null)
+const error = ref<string | null>(null)
 
 onMounted(async () => {
-  const response = await apiClient.get<WeatherHistoryResponse>(`/api/weather/${props.id}`)
-  history.value = response.data
+  try {
+    const response = await apiClient.get<WeatherHistoryResponse>(`/api/weather/${props.id}`)
+    history.value = response.data
+  } catch (e) {
+    error.value = isAxiosError(e) && e.response?.status === 404
+      ? 'No such city'
+      : 'Something went wrong'
+  }
 })
 
 // --- Graph geometry -------------------------------------------------------
@@ -139,9 +148,10 @@ const warningBoxes = computed(() => {
 </script>
 
 <template>
-  <section>
-    <RouterLink to="/">&larr; Back to all cities</RouterLink>
-    <h1>Weather of the past week at {{ history?.name }}</h1>
+  <RouterLink to="/">&larr; Back to all cities</RouterLink>
+  <ErrorBlurb v-if="error" :message="error" />
+  <section v-else-if="history">
+    <h1>Weather of the past week at {{ history.name }}</h1>
 
     <div v-if="warningBoxes.length" class="warning-boxes">
       <div v-for="box in warningBoxes" :key="box.severity"

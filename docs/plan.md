@@ -116,7 +116,7 @@ The thinnest possible vertical: temperature only, no wind, no warnings.
 
 ## Future work?
 
-- Frontend: a reusable error-blurb component for failed fetches. The list
+- [x] Frontend: a reusable error-blurb component for failed fetches. The list
   (and detail) views currently `await` the API with no try/catch, so a 500
   -- which the read side deliberately lets bubble (the error-handling block
   above requirements iteration 11) -- or a network blip leaves the view

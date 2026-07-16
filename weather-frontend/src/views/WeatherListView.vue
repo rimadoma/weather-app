@@ -5,6 +5,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import apiClient from '../api/client'
+import ErrorBlurb from '../components/ErrorBlurb.vue'
 import { type CitySummary, type WeatherListResponse, type Warning } from '../types/weather'
 
 const route = useRoute()
@@ -12,12 +13,18 @@ const activePage = computed(() => Number(route.query.page) || 1)
 
 const pages = ref(0)
 const citySummaries = ref<CitySummary[]>([])
+const error = ref<string | null>(null)
 
 // Fetch on mount (immediate) and again whenever the active page changes.
 watch(activePage, async (page) => {
-  const response = await apiClient.get<WeatherListResponse>('/api/weather', { params: { page } })
-  citySummaries.value = response.data.cities
-  pages.value = Math.ceil(response.data.metadata.totalCities / response.data.metadata.pageSize)
+  try {
+    const response = await apiClient.get<WeatherListResponse>('/api/weather', { params: { page } })
+    citySummaries.value = response.data.cities
+    pages.value = Math.ceil(response.data.metadata.totalCities / response.data.metadata.pageSize)
+    error.value = null
+  } catch {
+    error.value = 'Something went wrong'
+  }
 }, { immediate: true })
 
 function mapMeasurement(value: number | null | undefined, unit: string | null = null) : string {
@@ -122,7 +129,8 @@ function summariseWarnings(warnings: Warning[]): WarningIcon[] {
           :class="{ active: page === activePage }"
         >{{ page }}</RouterLink><span v-if="page < pages">|</span>
       </template>
-    <table v-if="citySummaries.length > 0">
+    <ErrorBlurb v-if="error" :message="error" />
+    <table v-else-if="citySummaries.length > 0">
       <thead>
         <tr>
           <th>City</th>
