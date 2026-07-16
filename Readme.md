@@ -1,6 +1,9 @@
 A web app that shows basic weather data for cities. Can view temperature and wind now or over the past week. Also displays active weather warnings. A learning project for brushing up on Java, Spring Boot, jOOQ, PostgreSQL and Vue.js. 
 Includes a test data generator that can be used to seed historical data and to produce messages over RabbitMQ for "real time" measurements. I tried to work with Claude Code in a way where both the workflow and human-AI interaction would be as visible as possible. Project started from iteration 0 where I provided the initial requirements and context (see /docs).
 
+# How to read this repo
+The most instructive part of this project is not the code but the decision log in `/docs`. `requirements.md` and `data-modelling.md` are written as iterations, **newest first**: start at iteration 0 at the bottom and read upward to watch the design evolve. Nothing has been tidied up after the fact -- superseded decisions and outright reversals are left standing with their reasons stated (e.g. requirements iteration 15 undoing iteration 10, or Vuex being dropped in iteration 13). If you are early in your career: this back-and-forth is what software architecture actually looks like. There is no perfect design, just reasonable assumptions, missteps, and revisions. `plan.md` shows the order everything was built in (vertical slices, each feature end-to-end), and `initial-context.md` is the brief that set the human--AI collaboration rules.
+
 # Architecture
 A Maven multi-module backend plus a Vue frontend. Data flows one way: the
 generator publishes fake measurements to RabbitMQ, the materialiser writes them
